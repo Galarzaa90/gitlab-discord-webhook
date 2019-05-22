@@ -13,7 +13,7 @@ routes = web.RouteTableDef()
 
 
 @routes.post('/webhook/gitlab')
-async def login(request: web.Request):
+async def receive_webhook(request: web.Request):
     try:
         event_type = request.headers.getone('x-gitlab-event')
     except KeyError:
@@ -25,6 +25,7 @@ async def login(request: web.Request):
 
 
 async def process_push_hook(data):
+    """Builds and sends an embed message with new commits information."""
     repository = data["repository"]
     commit_count = data["total_commits_count"]
 
@@ -32,14 +33,16 @@ async def process_push_hook(data):
     embed.set_author(name=data["user_name"], icon_url=data["user_avatar"])
     embed.description = ""
     for commit in data["commits"]:
-        embed.description += f"[`{commit['id'][:7]}`]({commit['url']}) {commit['message']} - {commit['author']['name']}\n"
+        message = commit["message"].splitlines()[0]
+        embed.description += f"[`{commit['id'][:7]}`]({commit['url']}) {message} - {commit['author']['name']}\n"
     await send_message(None, embed=embed)
 
 
 async def send_message(content, **kwargs):
     async with aiohttp.ClientSession() as session:
         try:
-            webhook = discord.Webhook.from_url(config['Discord']['webhook'], adapter=discord.AsyncWebhookAdapter(session))
+            webhook = discord.Webhook.from_url(config['Discord']['webhook'],
+                                               adapter=discord.AsyncWebhookAdapter(session))
             await webhook.send(content, **kwargs)
         except Exception as e:
             web.HTTPInternalServerError(text=str(e))
