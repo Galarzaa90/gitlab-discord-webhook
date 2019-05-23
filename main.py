@@ -28,8 +28,15 @@ async def process_push_hook(data):
     """Builds and sends an embed message with new commits information."""
     repository = data["repository"]
     commit_count = data["total_commits_count"]
+    branch = data["ref"].replace("refs/head/")
+    commit_str = "commit" if commit_count == 1 else "commits"
+    # Show link to commit compare if there's more than one commit
+    if commit_count > 1:
+        embed_url = f"{repository['homepage']}/compare/{data['before'][:7]}...{data['after'][:7]}"
+    else:
+        embed_url = f"{repository['homepage']}/commit/{data['after'][:7]}"
 
-    embed = discord.Embed(title=f"[{repository['name']}] {commit_count} new commits", url=repository['homepage'])
+    embed = discord.Embed(title=f"[{repository['name']}:{branch}] {commit_count} new {commit_str}", url=embed_url)
     embed.set_author(name=data["user_name"], icon_url=data["user_avatar"])
     embed.description = ""
     for commit in data["commits"]:
