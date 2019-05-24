@@ -28,7 +28,7 @@ async def process_push_hook(data):
     """Builds and sends an embed message with new commits information."""
     repository = data["repository"]
     commit_count = data["total_commits_count"]
-    branch = data["ref"].replace("refs/head/")
+    branch = data["ref"].replace("refs/head/", "")
     commit_str = "commit" if commit_count == 1 else "commits"
     # Show link to commit compare if there's more than one commit
     if commit_count > 1:
