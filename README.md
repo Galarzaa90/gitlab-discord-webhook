@@ -25,12 +25,12 @@ but every instance will only post messages through a single discord webhook.
 
 ## Supported Triggers
 - [X] Push events
-- [ ] Tag push events
-- [ ] Comments
+- [X] Tag push events
+- [X] Comments
 - [ ] Confidential Comments
-- [ ] Issues events
+- [X] Issues events
 - [ ] Confidential Issues events
-- [ ] Merge request events
+- [X] Merge request events
 - [ ] Job events
 - [ ] Pipeline events
 - [ ] Wiki Page events
