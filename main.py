@@ -4,6 +4,8 @@ import aiohttp
 import discord
 from aiohttp import web
 
+import models
+
 config = configparser.ConfigParser()
 if not config.read('config.ini'):
     print("Could not find config file.")
@@ -32,44 +34,49 @@ async def receive_webhook(request: web.Request):
 
 async def process_push_hook(data):
     """Builds and sends an embed message with new commits information."""
-    repository = data["repository"]
-    commit_count = data["total_commits_count"]
-    branch = data["ref"].replace("refs/heads/", "")
-    commit_str = "commit" if commit_count == 1 else "commits"
-    # Show link to commit compare if there's more than one commit
-    if commit_count > 1:
-        embed_url = f"{repository['homepage']}/compare/{data['before'][:7]}...{data['after'][:7]}"
-    else:
-        embed_url = f"{repository['homepage']}/commit/{data['after'][:7]}"
 
-    embed = discord.Embed(title=f"[{repository['name']}:{branch}] {commit_count} new {commit_str}", url=embed_url,
-                          colour=discord.Colour.blurple())
-    embed.set_author(name=data["user_username"], icon_url=data["user_avatar"])
+    push = models.PushRequest(**data)
+    repository = push.repository
+    project = push.project
+    commit_str = "commit" if push.total_commits_count == 1 else "commits"
+    # Show link to commit compare if there's more than one commit
+    if push.total_commits_count > 1:
+        embed_url = f"{repository.homepage}/compare/{push.before[:7]}...{push.after[:7]}"
+    else:
+        embed_url = f"{repository.homepage}/commit/{push.after[:7]}"
+
+    embed = discord.Embed(title=f"[{project.namespace}/{project.name}:{push.branch}] "
+                                f"{push.total_commits_count} new {commit_str}",
+                          url=embed_url, colour=discord.Colour.blurple())
+    embed.set_author(name=push.user_name, icon_url=push.user_avatar)
     embed.description = ""
-    for commit in data["commits"]:
-        message = commit["message"].splitlines()[0]
-        embed.description += f"[`{commit['id'][:7]}`]({commit['url']}) {message} - {commit['author']['name']}\n"
-    await send_message(None, embed=embed)
+    for commit in push.commits:
+        message = commit.message.splitlines()[0]
+        embed.description += f"[`{commit.id[:7]}`]({commit.url}) {message} - {commit.author.name}\n"
+    print("Sending push message")
+    await send_message(None, embed=embed, avatar_url=push.project.avatar_url)
 
 
 async def process_issue_hook(data):
     """Builds and sends an embed message with issues information."""
-    repository = data["repository"]
-    issue = data["object_attributes"]
-    user = data["user"]
+
+    request = models.IssueRequest(**data)
+    project = request.project
+    issue = request.issue
+    user = request.user
     description = ""
     action = "Issue updated"
     colour = discord.Colour.light_grey()
-    if issue["action"] == "open":
+    if issue.action == "open":
         action = "Issue opened"
-        description = issue['description']
+        description = issue.description
         colour = discord.Colour.green()
-    elif issue["action"] == "close":
+    elif issue.action == "close":
         action = "Issue closed"
         colour = discord.Colour.dark_grey()
-    embed = discord.Embed(title=f"[{repository['name']}] {action}: #{issue['iid']} {issue['title']}"
-                          , url=issue["url"], description=description, colour=colour)
-    embed.set_author(name=user["username"], icon_url=user["avatar_url"])
+    embed = discord.Embed(title=f"[{project.namespace}/{project.name}] {action}: #{issue.iid} {issue.title}"
+                          , url=issue.url, description=description, colour=colour)
+    embed.set_author(name=user.username, icon_url=user.avatar_url)
     await send_message(None, embed=embed)
 
 
