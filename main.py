@@ -7,13 +7,11 @@ from aiohttp import web
 import models
 
 config = configparser.ConfigParser()
-if not config.read('config.ini'):
-    print("Could not find config file.")
-    exit()
 
 routes = web.RouteTableDef()
 
 EMPTY_COMMIT = "0000000000000000000000000000000000000000"
+
 
 @routes.post('/webhook/gitlab')
 async def receive_webhook(request: web.Request):
@@ -23,7 +21,8 @@ async def receive_webhook(request: web.Request):
         return web.HTTPBadRequest(text="GitLab event type not found.")
     body = await request.json()
     if event_type == "Push Hook":
-        await process_push_hook(body)
+        data = models.PushRequest(**body)
+        await process_push_hook(data)
     if event_type == "Issue Hook":
         await process_issue_hook(body)
     if event_type == "Note Hook":
@@ -33,10 +32,8 @@ async def receive_webhook(request: web.Request):
     return web.Response(text="OK")
 
 
-async def process_push_hook(data):
+async def process_push_hook(push: models.PushRequest):
     """Builds and sends an embed message with new commits information."""
-
-    push = models.PushRequest(**data)
     repository = push.repository
     project = push.project
     commit_str = "commit" if push.total_commits_count == 1 else "commits"
@@ -147,7 +144,11 @@ async def send_message(content, **kwargs):
             web.HTTPInternalServerError(text=str(e))
 
 
-app = web.Application()
-app.add_routes(routes)
+if __name__ == "__main__":
+    if not config.read('config.ini'):
+        print("Could not find config file.")
+        exit()
+    app = web.Application()
+    app.add_routes(routes)
 
-web.run_app(app, port=7400)
+    web.run_app(app, port=7400)
