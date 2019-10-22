@@ -1,0 +1,98 @@
+{
+  "object_kind": "issue",
+  "event_type": "issue",
+  "user": {
+    "name": "Allan Galarza",
+    "username": "Galarzaa90",
+    "avatar_url": "https://assets.gitlab-static.net/uploads/-/system/user/avatar/516243/avatar.png"
+  },
+  "project": {
+    "id": 14942196,
+    "name": "Webhook Tests",
+    "description": "",
+    "web_url": "https://gitlab.com/Galarzaa90/webhook-tests",
+    "avatar_url": null,
+    "git_ssh_url": "git@gitlab.com:Galarzaa90/webhook-tests.git",
+    "git_http_url": "https://gitlab.com/Galarzaa90/webhook-tests.git",
+    "namespace": "Allan Galarza",
+    "visibility_level": 0,
+    "path_with_namespace": "Galarzaa90/webhook-tests",
+    "default_branch": "master",
+    "ci_config_path": null,
+    "homepage": "https://gitlab.com/Galarzaa90/webhook-tests",
+    "url": "git@gitlab.com:Galarzaa90/webhook-tests.git",
+    "ssh_url": "git@gitlab.com:Galarzaa90/webhook-tests.git",
+    "http_url": "https://gitlab.com/Galarzaa90/webhook-tests.git"
+  },
+  "object_attributes": {
+    "author_id": 516243,
+    "closed_at": null,
+    "confidential": false,
+    "created_at": "2019-10-21 22:18:06 UTC",
+    "description": "Just description",
+    "due_date": null,
+    "id": 26174494,
+    "iid": 1,
+    "last_edited_at": null,
+    "last_edited_by_id": null,
+    "milestone_id": null,
+    "moved_to_id": null,
+    "duplicated_to_id": null,
+    "project_id": 14942196,
+    "relative_position": 1073742323,
+    "state_id": 1,
+    "time_estimate": 0,
+    "title": "New issue",
+    "updated_at": "2019-10-22 01:04:32 UTC",
+    "updated_by_id": 516243,
+    "weight": null,
+    "url": "https://gitlab.com/Galarzaa90/webhook-tests/issues/1",
+    "total_time_spent": 0,
+    "human_total_time_spent": null,
+    "human_time_estimate": null,
+    "assignee_ids": [
+      516243
+    ],
+    "assignee_id": 516243,
+    "labels": [
+    ],
+    "state": "opened",
+    "action": "update"
+  },
+  "labels": [
+  ],
+  "changes": {
+    "updated_at": {
+      "previous": "2019-10-21 23:32:31 UTC",
+      "current": "2019-10-22 01:04:32 UTC"
+    },
+    "updated_by_id": {
+      "previous": null,
+      "current": 516243
+    },
+    "assignees": {
+      "previous": [
+      ],
+      "current": [
+        {
+          "name": "Allan Galarza",
+          "username": "Galarzaa90",
+          "avatar_url": "https://assets.gitlab-static.net/uploads/-/system/user/avatar/516243/avatar.png"
+        }
+      ]
+    }
+  },
+  "repository": {
+    "name": "Webhook Tests",
+    "url": "git@gitlab.com:Galarzaa90/webhook-tests.git",
+    "description": "",
+    "homepage": "https://gitlab.com/Galarzaa90/webhook-tests"
+  },
+  "assignees": [
+    {
+      "name": "Allan Galarza",
+      "username": "Galarzaa90",
+      "avatar_url": "https://assets.gitlab-static.net/uploads/-/system/user/avatar/516243/avatar.png"
+    }
+  ]
+}
