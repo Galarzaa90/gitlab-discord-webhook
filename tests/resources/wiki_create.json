@@ -1,0 +1,42 @@
+{
+  "object_kind": "wiki_page",
+  "user": {
+    "name": "Allan Galarza",
+    "username": "Galarzaa90",
+    "avatar_url": "https://assets.gitlab-static.net/uploads/-/system/user/avatar/516243/avatar.png"
+  },
+  "project": {
+    "id": 14942196,
+    "name": "Webhook Tests",
+    "description": "",
+    "web_url": "https://gitlab.com/Galarzaa90/webhook-tests",
+    "avatar_url": null,
+    "git_ssh_url": "git@gitlab.com:Galarzaa90/webhook-tests.git",
+    "git_http_url": "https://gitlab.com/Galarzaa90/webhook-tests.git",
+    "namespace": "Allan Galarza",
+    "visibility_level": 0,
+    "path_with_namespace": "Galarzaa90/webhook-tests",
+    "default_branch": "master",
+    "ci_config_path": null,
+    "homepage": "https://gitlab.com/Galarzaa90/webhook-tests",
+    "url": "git@gitlab.com:Galarzaa90/webhook-tests.git",
+    "ssh_url": "git@gitlab.com:Galarzaa90/webhook-tests.git",
+    "http_url": "https://gitlab.com/Galarzaa90/webhook-tests.git"
+  },
+  "wiki": {
+    "web_url": "https://gitlab.com/Galarzaa90/webhook-tests/wikis/home",
+    "git_ssh_url": "git@gitlab.com:Galarzaa90/webhook-tests.wiki.git",
+    "git_http_url": "https://gitlab.com/Galarzaa90/webhook-tests.wiki.git",
+    "path_with_namespace": "Galarzaa90/webhook-tests.wiki",
+    "default_branch": "master"
+  },
+  "object_attributes": {
+    "content": "This is a wiki page.",
+    "format": "markdown",
+    "message": "Create home",
+    "title": "home",
+    "slug": "home",
+    "url": "https://gitlab.com/Galarzaa90/webhook-tests/wikis/home",
+    "action": "create"
+  }
+}
