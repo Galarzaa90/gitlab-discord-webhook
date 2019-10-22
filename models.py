@@ -2,18 +2,54 @@ class BaseRequest:
     def __init__(self, **kwargs):
         self.object_kind = kwargs.get("object_kind")
         self.event_type = kwargs.get("event_type")
+        self.repository = Repository(**kwargs.get("repository", {}))
+        self.project = Project(**kwargs.get("project", {}))
 
+
+class NoteRequest(BaseRequest):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.note = Note(**kwargs.get("object_attributes", {}))
+        if "issue" in kwargs:
+            self.issue = Issue(**kwargs.get("issue", {}))
+        else:
+            self.issue = None
+
+class Note:
+    def __init__(self, **kwargs):
+        self.attachment = kwargs.get("attachment")
+        self.author_id = kwargs.get("author_id")
+        self.change_position = kwargs.get("change_position")
+        self.commit_id = kwargs.get("commit_id")
+        self.created_at = kwargs.get("created_at")
+        self.discussion_id = kwargs.get("discussion_id")
+        self.id = kwargs.get("id")
+        self.line_code = kwargs.get("line_code")
+        self.note = kwargs.get("note")
+        self.noteable_id = kwargs.get("noteable_id")
+        self.noteable_type = kwargs.get("noteable_type")
+        self.original_position = kwargs.get("original_position")
+        self.position = kwargs.get("position")
+        self.project_id = kwargs.get("project_id")
+        self.resolved_at = kwargs.get("resolved_at")
+        self.resolved_by_id = kwargs.get("resolved_by_id")
+        self.resolved_by_push = kwargs.get("resolved_by_push")
+        self.st_diff = kwargs.get("st_diff")
+        self.system = kwargs.get("system")
+        self.type = kwargs.get("type")
+        self.updated_at = kwargs.get("updated_at")
+        self.updated_by_id = kwargs.get("updated_by_id")
+        self.description = kwargs.get("description")
+        self.url = kwargs.get("url")
 
 class IssueRequest(BaseRequest):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.issue = Issue(**kwargs.get("object_attributes", {}))
-        self.repository = Repository(**kwargs.get("repository", {}))
         self.user = User(**kwargs.get("user", {}))
         self.assignees = [User(**kwarg) for kwarg in kwargs.get("assignees", [])]
         self.labels = kwargs.get("labels")
         self.changes = Changes(**kwargs.get("changes", {}))
-        self.project = Project(**kwargs.get("project", {}))
 
 
 class Issue:
@@ -47,6 +83,7 @@ class Issue:
         self.assignee_id = kwargs.get("assignee_id")
         self.state = kwargs.get("sate")
         self.action = kwargs.get("action")
+
 
 class Changes:
     def __init__(self, **kwargs):
@@ -86,9 +123,7 @@ class PushRequest(BaseRequest):
         self.user_email = kwargs.get("user_email")
         self.user_avatar = kwargs.get("user_avatar")
         self.project_id = kwargs.get("project_id")
-        self.project = Project(**kwargs.get("project", {}))
         self.commits = [Commit(**kwarg) for kwarg in kwargs.get("commits", [])]
-        self.repository = Repository(**kwargs.get("repository", {}))
         self.total_commits_count = kwargs.get("total_commits_count")
 
     @property
