@@ -21,18 +21,21 @@ async def receive_webhook(request: web.Request):
         return web.HTTPBadRequest(text="GitLab event type not found.")
     body = await request.json()
     if event_type == "Push Hook":
-        data = models.PushRequest(**body)
+        data = models.PushHook(**body)
         await process_push_hook(data)
     if event_type == "Issue Hook":
-        await process_issue_hook(body)
+        data = models.IssueHook(**body)
+        await process_issue_hook(data)
     if event_type == "Note Hook":
-        await process_note_hook(body)
+        data = models.NoteHook(**body)
+        await process_note_hook(data)
     if event_type == "Merge Request Hook":
-        await process_merge_request_hook(body)
+        data = models.MergeRequestHook(**body)
+        await process_merge_request_hook(data)
     return web.Response(text="OK")
 
 
-async def process_push_hook(push: models.PushRequest):
+async def process_push_hook(push: models.PushHook):
     """Builds and sends an embed message with new commits information."""
     repository = push.repository
     project = push.project
@@ -70,12 +73,11 @@ async def process_push_hook(push: models.PushRequest):
     await send_message(None, embed=embed, avatar_url=push.project.avatar_url)
 
 
-async def process_issue_hook(data):
+async def process_issue_hook(issue_data):
     """Builds and sends an embed message with issues information."""
-    request = models.IssueRequest(**data)
-    project = request.project
-    issue = request.issue
-    user = request.user
+    project = issue_data.project
+    issue = issue_data.issue
+    user = issue_data.user
     description = ""
     action = "Issue updated"
     colour = discord.Colour.light_grey()
@@ -92,45 +94,45 @@ async def process_issue_hook(data):
     await send_message(None, embed=embed)
 
 
-async def process_note_hook(data):
+async def process_note_hook(data: models.NoteHook):
     """Builds and sends an embed message with notes information."""
-    repository = data["repository"]
-    note = data["object_attributes"]
-    user = data["user"]
+    note = data.note
+    user = data.user
+    project = data.project
     colour = discord.Colour.greyple()
-    embed = discord.Embed(url=note["url"], description=note["note"], colour=colour)
-    embed.set_author(name=user["username"], icon_url=user["avatar_url"])
-    if "issue" in data:
-        issue = data["issue"]
-        embed.title = f"[{repository['name']}] New comment on issue #{issue['iid']}: {issue['title']}"
-    if "commit" in data:
-        commit = data["commit"]
-        embed.title = f"[{repository['name']}] New comment on commit `{commit['id'][:7]}`"
-    if "merge_request" in data:
-        merge = data["merge_request"]
-        embed.title = f"[{repository['name']}] New comment on merge request !{merge['iid']}: {merge['title']}"
+    embed = discord.Embed(url=note.url, description=note.description, colour=colour)
+    embed.set_author(name=user.username, icon_url=user.avatar_url)
+    if data.issue:
+        issue = data.issue
+        embed.title = f"[{project.namespace}/{project.name}] New comment on issue #{issue.iid}: {issue.title}"
+    if data.commit:
+        commit = data.commit
+        embed.title = f"[{project.namespace}/{project.name}] New comment on commit `{commit.id[:7]}`"
+    if data.merge_request:
+        merge = data.merge_request
+        embed.title = f"[{project.namespace}/{project.name}] New comment on merge request !{merge.iid}: {merge.title}"
     await send_message(None, embed=embed)
 
 
-async def process_merge_request_hook(data):
+async def process_merge_request_hook(data: models.MergeRequestHook):
     """Builds and sends an embed message with merge request information."""
-    repository = data["repository"]
-    merge = data["object_attributes"]
-    user = data["user"]
+    project = data.project
+    merge = data.merge_request
+    user = data.user
     description = ""
     action = "Issue updated"
     colour = discord.Colour.light_grey()
-    if merge["action"] == "open":
+    if merge.action == "open":
         action = "Merge request opened"
-        description = merge['description']
+        description = merge.description
         colour = discord.Colour.dark_green()
-    elif merge["action"] == "close":
+    elif merge.action == "close":
         action = "Merge request closed"
         colour = discord.Colour.dark_grey()
-    embed = discord.Embed(title=f"[{repository['name']}] {action}: !{merge['iid']} {merge['title']}"
-                          , url=merge["url"], description=description, colour=colour)
-    embed.set_author(name=user["username"], icon_url=user["avatar_url"])
-    embed.set_footer(text=f"{merge['source_branch']} → {merge['target_branch']}")
+    embed = discord.Embed(title=f"[{project.namespace}/{project.name}] {action}: !{merge.iid} {merge.title}",
+                          url=merge.url, description=description, colour=colour)
+    embed.set_author(name=user.username, icon_url=user.avatar_url)
+    embed.set_footer(text=f"{merge.source_branch} → {merge.target_branch}")
     await send_message(None, embed=embed)
 
 

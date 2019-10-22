@@ -16,7 +16,7 @@ class TestWebhooks(asynctest.TestCase):
 
     async def test_process_push_hook_new_commits(self):
         data = _load_json("push_commit.json")
-        push = models.PushRequest(**data)
+        push = models.PushHook(**data)
 
         main.send_message = asynctest.CoroutineMock()
 
