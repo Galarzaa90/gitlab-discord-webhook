@@ -13,6 +13,7 @@ if not config.read('config.ini'):
 
 routes = web.RouteTableDef()
 
+EMPTY_COMMIT = "0000000000000000000000000000000000000000"
 
 @routes.post('/webhook/gitlab')
 async def receive_webhook(request: web.Request):
@@ -45,6 +46,21 @@ async def process_push_hook(data):
     else:
         embed_url = f"{repository.homepage}/commit/{push.after[:7]}"
 
+    if push.before == EMPTY_COMMIT:
+        embed = discord.Embed(title=f"[{project.namespace}/{project.name}] New branch created {push.branch}",
+                              url=embed_url, colour=discord.Colour.light_grey())
+        embed.set_author(name=push.user_name, icon_url=push.user_avatar)
+        await send_message(None, embed=embed, avatar_url=push.project.avatar_url)
+    elif push.after == EMPTY_COMMIT:
+        embed = discord.Embed(title=f"[{project.namespace}/{project.name}] Branch deleted {push.branch}",
+                              url=embed_url, colour=discord.Colour.light_grey())
+        embed.set_author(name=push.user_name, icon_url=push.user_avatar)
+        await send_message(None, embed=embed, avatar_url=push.project.avatar_url)
+
+    # If there are no commits, do not show a message
+    if not push.total_commits_count:
+        return
+
     embed = discord.Embed(title=f"[{project.namespace}/{project.name}:{push.branch}] "
                                 f"{push.total_commits_count} new {commit_str}",
                           url=embed_url, colour=discord.Colour.blurple())
@@ -59,7 +75,6 @@ async def process_push_hook(data):
 
 async def process_issue_hook(data):
     """Builds and sends an embed message with issues information."""
-
     request = models.IssueRequest(**data)
     project = request.project
     issue = request.issue
