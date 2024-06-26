@@ -42,8 +42,8 @@ async def receive_webhook(request: web.Request):
     return web.Response(text="OK")
 
 
-async def process_push_hook(app: aiohttp.web.Application, push: models.PushHookPayload):
-    """Builds and sends an embed message with new commits information."""
+async def process_push_hook(app: aiohttp.web.Application, push: models.PushHookPayload) -> None:
+    """Build and sends an embed message with new commits information."""
     repository = push.repository
     project = push.project
     commit_str = "commit" if push.total_commits_count == 1 else "commits"
@@ -72,15 +72,18 @@ async def process_push_hook(app: aiohttp.web.Application, push: models.PushHookP
     if not push.total_commits_count:
         return
 
-    embed = discord.Embed(title=f"[{project.namespace}/{project.name}:{push.branch}] "
-                                f"{push.total_commits_count} new {commit_str}",
-                          url=embed_url, colour=discord.Colour.blurple())
+    embed = discord.Embed(
+        title=f"[{project.namespace}/{project.name}:{push.branch}] {push.total_commits_count} new {commit_str}",
+        url=embed_url,
+        colour=discord.Colour.blurple(),
+    )
     embed.set_author(name=push.user_name, icon_url=push.user_avatar)
     embed.set_thumbnail(url=push.project.avatar_url)
     embed.description = ""
     for commit in push.commits:
         message = commit.message.splitlines()[0]
         embed.description += f"[`{commit.id[:7]}`]({commit.url}) {message} - {commit.author.name}\n"
+        embed.timestamp = commit.timestamp
     print("Sending push message")
     await send_message(app[client_session], None, embed=embed)
 
@@ -117,8 +120,9 @@ async def process_note_hook(app: aiohttp.web.Application, data: NoteHookPayload)
     user = data.user
     project = data.project
     colour = discord.Colour.greyple()
-    embed = discord.Embed(url=note.url, description=note.description, colour=colour)
+    embed = discord.Embed(url=note.url, description=note.note, colour=colour)
     embed.set_author(name=user.username, icon_url=user.avatar_url)
+    embed.timestamp = note.created_at
     if data.issue:
         issue = data.issue
         embed.title = f"[{project.namespace}/{project.name}] New comment on issue #{issue.iid}: {issue.title}"
@@ -173,7 +177,7 @@ async def error_handler(request):
     with error_context(request) as context:
         if isinstance(context.err, ValidationError):
             return web.Response(text=context.err.json(), status=400, content_type="application/json")
-        logger.error(context.message, exc_info=True)
+        logger.exception(context.message, exc_info=context.err)
         return web.json_response(context.data, status=context.status)
 
 

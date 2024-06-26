@@ -1,12 +1,15 @@
 import datetime
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal, Optional
 
 from pydantic import BaseModel, BeforeValidator
 
 
-def parse_gitlab_timestamp(value: str):
+def parse_gitlab_timestamp(value: str) -> datetime.datetime:
     """Parse GitLab timestamps into datetime objects."""
-    return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S %Z").replace(tzinfo=datetime.timezone.utc)
+    try:
+        return datetime.datetime.fromisoformat(value)
+    except ValueError:
+        return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S %Z").replace(tzinfo=datetime.timezone.utc)
 
 
 GitLabTimestamp = Annotated[datetime.datetime, BeforeValidator(parse_gitlab_timestamp)]
@@ -32,6 +35,12 @@ class ObjectAttributes(BaseModel):
     url: str
 
 
+class SimpleUser(BaseModel):
+    name: str
+    username: str
+    avatar_url: str
+
+
 class User(BaseModel):
     id: int
     name: str
@@ -41,18 +50,18 @@ class User(BaseModel):
 
 
 class Project(BaseModel):
-    id: int
+    id: Optional[int] = int
     name: str
-    description: Union[str, None]
+    description: Optional[str]
     web_url: str
-    avatar_url: Union[str, None]
+    avatar_url: Optional[str]
     git_ssh_url: str
     git_http_url: str
     namespace: str
     visibility_level: int
     path_with_namespace: str
     default_branch: str
-    ci_config_path: Union[str, None]
+    ci_config_path: Optional[str] = None
 
 
 class Author(BaseModel):
@@ -63,7 +72,7 @@ class Author(BaseModel):
 class Commit(BaseModel):
     id: str
     message: str
-    title: str
+    title: Optional[str] = None
     timestamp: datetime.datetime
     url: str
     author: Author
@@ -79,8 +88,8 @@ class Runner(BaseModel):
 
 
 class ArtifactsFile(BaseModel):
-    filename: Union[str, None]
-    size: Union[int, None]
+    filename: Optional[str]
+    size: Optional[int]
 
 
 class Build(BaseModel):
@@ -89,16 +98,16 @@ class Build(BaseModel):
     name: str
     status: str
     created_at: str
-    started_at: Union[str, None]
-    finished_at: Union[str, None]
-    duration: Union[float, None]
-    queued_duration: Union[float, None]
-    failure_reason: Union[str, None]
+    started_at: Optional[str]
+    finished_at: Optional[str]
+    duration: Optional[float]
+    queued_duration: Optional[float]
+    failure_reason: Optional[str]
     when: str
     manual: bool
     allow_failure: bool
     user: User
-    runner: Union[Runner, None]
+    runner: Optional[Runner]
     artifacts_file: ArtifactsFile
     environment: None
 
@@ -106,7 +115,7 @@ class Build(BaseModel):
 class Repository(BaseModel):
     name: str
     url: str
-    description: Union[str, None]
+    description: Optional[str]
     homepage: str
 
 
@@ -120,38 +129,45 @@ class Label(BaseModel):
     id: int
     title: str
     color: str
-    project_id: int
+    project_id: Optional[int]
     created_at: GitLabTimestamp
     updated_at: GitLabTimestamp
     template: bool
-    description: Union[str, None]
+    description: Optional[str]
     type: str
-    group_id: Union[int, None]
+    group_id: Optional[int]
 
 
 class EscalationPolicy(BaseModel):
     id: int
     name: str
 
-
 class Issue(BaseModel):
     id: int
     title: str
     assignee_ids: list[int]
-    assignee_id: Union[int, None]
+    assignee_id: Optional[int]
     author_id: int
     project_id: int
     created_at: GitLabTimestamp
-    updated_at: str
-    updated_by_id: Union[int, None]
+    updated_at: GitLabTimestamp
+    position: int
+    branch_name: Optional[None]
+    description: str
+    milestone_id: Optional[int]
+    state: str
+    iid: int
+    labels: list[Label]
+
+
+class IssueDetails(Issue):
+    updated_by_id: Optional[int]
     last_edited_at: None
     last_edited_by_id: None
-    relative_position: Union[int, None]
-    description: str
-    milestone_id: None
+    relative_position: Optional[int]
     state_id: int
     confidential: bool
-    discussion_locked: Union[bool, None]
+    discussion_locked: Optional[bool]
     due_date: None
     moved_to_id: None
     duplicated_to_id: None
@@ -162,185 +178,110 @@ class Issue(BaseModel):
     human_time_estimate: None
     human_time_change: None
     weight: None
-    health_status: Union[str, None]
+    health_status: Optional[str]
     type: str
-    iid: int
     url: str
-    state: str
     action: str
     severity: str
-    escalation_status: Union[str, None] = None
-    escalation_policy: Union[EscalationPolicy, None] = None
-    labels: list[Label]
+    escalation_status: Optional[str] = None
+    escalation_policy: Optional[EscalationPolicy] = None
+
 
 class MergeParams(BaseModel):
     force_remove_source_branch: str
 
 
-
-class MergeRequestObjectAttributes(BaseModel):
-    assignee_id: None
+class MergeRequest(BaseModel):
+    assignee: SimpleUser
+    assignee_id: Optional[int]
     author_id: int
-    created_at: str
+    created_at: GitLabTimestamp
     description: str
+    detailed_merge_status: str
     draft: bool
-    head_pipeline_id: None
     id: int
     iid: int
-    last_edited_at: Union[str, None]
-    last_edited_by_id: Union[int, None]
-    merge_commit_sha: Union[str, None]
-    merge_error: None
-    merge_params: MergeParams
+    labels: list[Label]
+    last_commit: Commit
     merge_status: str
-    merge_user_id: None
-    merge_when_pipeline_succeeds: bool
-    milestone_id: Union[int, None]
+    milestone_id: int
+    position: int
+    source: Project
     source_branch: str
     source_project_id: int
-    state_id: int
+    state: str
+    target: Project
     target_branch: str
     target_project_id: int
-    time_estimate: int
     title: str
-    updated_at: str
-    updated_by_id: Union[int, None]
-    prepared_at: str
-    assignee_ids: list[Any]
+    updated_at: GitLabTimestamp
+    work_in_progress: bool
+
+
+class MergeRequestDetails(MergeRequest):
+    action: str
+    approval_rules: list[Any]
+    assignee_ids: list[int]
     blocking_discussions_resolved: bool
-    detailed_merge_status: str
     first_contribution: bool
+    head_pipeline_id: Any = None
     human_time_change: None
     human_time_estimate: None
     human_total_time_spent: None
-    labels: list[Label]
-    last_commit: Commit
+    last_edited_at: Optional[GitLabTimestamp] = None
+    last_edited_by_id: Optional[int] = None
+    merge_commit_sha: Optional[str] = None
+    merge_error: Optional[Any] = None
+    merge_params: Optional[MergeParams] = None
+    merge_user_id: Optional[int] = None
+    merge_when_pipeline_succeeds: Optional[bool] = None
+    prepared_at: str
     reviewer_ids: list[Any]
-    source: Project
-    state: str
-    target: Project
+    state_id: int
     time_change: int
+    time_estimate: int
     total_time_spent: int
+    updated_by_id: int
     url: str
-    work_in_progress: bool
-    approval_rules: list[Any]
-    action: str
+
+
+class StDiff(BaseModel):
+    diff: str
+    new_path: str
+    old_path: str
+    a_mode: str
+    b_mode: str
+    new_file: bool
+    renamed_file: bool
+    deleted_file: bool
 
 
 class Note(BaseModel):
-    attachment: None
+    attachment: None = None
     author_id: int
-    change_position: None
-    commit_id: Union[str, None]
-    created_at: str
-    discussion_id: str
+    change_position: None = None
+    commit_id: Optional[str]
+    created_at: GitLabTimestamp
+    discussion_id: Optional[str] = None
     id: int
-    line_code: None
+    line_code: Optional[str] = None
     note: str
-    noteable_id: Union[int, None]
+    noteable_id: Optional[int]
     noteable_type: str
-    original_position: None
-    position: None
+    original_position: None = None
+    position: None = None
     project_id: int
-    resolved_at: None
-    resolved_by_id: None
-    resolved_by_push: None
-    st_diff: None
+    resolved_at: None = None
+    resolved_by_id: None = None
+    resolved_by_push: None = None
+    st_diff: Optional[StDiff] = None
     system: bool
-    type: None
-    updated_at: str
-    updated_by_id: None
-    description: str
+    type: Optional[str] = None
+    updated_at: GitLabTimestamp
+    updated_by_id: None = None
+    description: Optional[str] = None
     url: str
     action: str
-
-
-class IssueNote(BaseModel):
-    author_id: int
-    closed_at: None
-    confidential: bool
-    created_at: str
-    description: str
-    discussion_locked: None
-    due_date: None
-    id: int
-    iid: int
-    last_edited_at: None
-    last_edited_by_id: None
-    milestone_id: None
-    moved_to_id: None
-    duplicated_to_id: None
-    project_id: int
-    relative_position: int
-    state_id: int
-    time_estimate: int
-    title: str
-    updated_at: str
-    updated_by_id: None
-    weight: None
-    health_status: None
-    type: str
-    url: str
-    total_time_spent: int
-    time_change: int
-    human_total_time_spent: None
-    human_time_change: None
-    human_time_estimate: None
-    assignee_ids: list[Any]
-    assignee_id: None
-    labels: list[Any]
-    state: str
-    severity: str
-    customer_relations_contacts: list[Any]
-
-
-
-class MergeRequest(BaseModel):
-    assignee_id: None
-    author_id: int
-    created_at: str
-    description: str
-    draft: bool
-    head_pipeline_id: None
-    id: int
-    iid: int
-    last_edited_at: str
-    last_edited_by_id: int
-    merge_commit_sha: str
-    merge_error: None
-    merge_params: MergeParams
-    merge_status: str
-    merge_user_id: None
-    merge_when_pipeline_succeeds: bool
-    milestone_id: int
-    source_branch: str
-    source_project_id: int
-    state_id: int
-    target_branch: str
-    target_project_id: int
-    time_estimate: int
-    title: str
-    updated_at: str
-    updated_by_id: int
-    prepared_at: str
-    assignee_ids: list[Any]
-    blocking_discussions_resolved: bool
-    detailed_merge_status: str
-    first_contribution: bool
-    human_time_change: None
-    human_time_estimate: None
-    human_total_time_spent: None
-    labels: list[Label]
-    last_commit: Commit
-    reviewer_ids: list[Any]
-    source: Project
-    state: str
-    target: Project
-    time_change: int
-    total_time_spent: int
-    url: str
-    work_in_progress: bool
-    approval_rules: list[Any]
 
 
 class PushHookPayload(BaseModel):
@@ -350,8 +291,8 @@ class PushHookPayload(BaseModel):
     after: str
     ref: str
     ref_protected: bool
-    checkout_sha: Union[str, None]
-    message: Union[str, None]
+    checkout_sha: Optional[str]
+    message: Optional[str] = None
     user_id: int
     user_name: str
     user_username: str
@@ -361,11 +302,11 @@ class PushHookPayload(BaseModel):
     project: Project
     commits: list[Commit]
     total_commits_count: int
-    push_options: Any
+    push_options: Optional[Any] = None
     repository: RepositoryDetails
 
     @property
-    def branch(self):
+    def branch(self) -> str:
         return self.ref.replace("refs/heads/", "")
 
 
@@ -374,10 +315,10 @@ class IssueHookPayload(BaseModel):
     event_type: Literal["issue"]
     user: User
     project: Project
-    object_attributes: Issue
+    object_attributes: IssueDetails
 
     @property
-    def issue(self) -> Issue:
+    def issue(self) -> IssueDetails:
         return self.object_attributes
 
 
@@ -389,9 +330,9 @@ class NoteHookPayload(BaseModel):
     project: Project
     object_attributes: Note
     repository: Repository
-    issue: Union[IssueNote, None] = None
-    commit: Union[Commit, None] = None
-    merge_request: Union[MergeRequest, None] = None
+    issue: Optional[Issue] = None
+    commit: Optional[Commit] = None
+    merge_request: Optional[MergeRequest] = None
 
     @property
     def note(self) -> Note:
@@ -399,7 +340,7 @@ class NoteHookPayload(BaseModel):
 
 
 class Change(BaseModel):
-    previous: Union[str, None]
+    previous: Optional[str]
     current: str
 
 
@@ -414,11 +355,11 @@ class MergeRequestHookPayload(BaseModel):
     event_type: Literal["merge_request"]
     user: User
     project: Project
-    object_attributes: MergeRequestObjectAttributes
+    object_attributes: MergeRequestDetails
     labels: list[Label]
     changes: Changes
     repository: Repository
 
     @property
-    def merge_request(self) -> MergeRequestObjectAttributes:
+    def merge_request(self) -> MergeRequestDetails:
         return self.object_attributes
