@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime
 from typing import Annotated, Any, Literal, Union
 
@@ -7,20 +5,11 @@ from pydantic import BaseModel, BeforeValidator
 
 
 def parse_gitlab_timestamp(value: str):
+    """Parse GitLab timestamps into datetime objects."""
     return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S %Z").replace(tzinfo=datetime.timezone.utc)
 
 
 GitLabTimestamp = Annotated[datetime.datetime, BeforeValidator(parse_gitlab_timestamp)]
-
-
-class BaseSchema(BaseModel):
-    object_kind: str
-    object_attributes: ObjectAttributes
-    merge_request: None
-    user: User
-    project: Project
-    commit: Commit
-    builds: list[Build]
 
 
 class ObjectAttributes(BaseModel):
@@ -380,8 +369,8 @@ class PushHookPayload(BaseModel):
 
 
 class IssueHookPayload(BaseModel):
-    object_kind: Literal['issue']
-    event_type: Literal['issue']
+    object_kind: Literal["issue"]
+    event_type: Literal["issue"]
     user: User
     project: Project
     object_attributes: Issue
@@ -392,8 +381,8 @@ class IssueHookPayload(BaseModel):
 
 
 class NoteHookPayload(BaseModel):
-    object_kind: Literal['note']
-    event_type: Literal['note']
+    object_kind: Literal["note"]
+    event_type: Literal["note"]
     user: User
     project_id: int
     project: Project

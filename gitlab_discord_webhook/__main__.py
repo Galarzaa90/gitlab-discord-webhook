@@ -17,15 +17,15 @@ config = configparser.ConfigParser()
 
 routes = web.RouteTableDef()
 
-client_session = web.AppKey('client_session', aiohttp.ClientSession)
+client_session = web.AppKey("client_session", aiohttp.ClientSession)
 
 EMPTY_COMMIT = "0000000000000000000000000000000000000000"
 
 
-@routes.post('/webhook/gitlab')
+@routes.post("/webhook/gitlab")
 async def receive_webhook(request: web.Request):
     try:
-        event_type = request.headers.getone('x-gitlab-event')
+        event_type = request.headers.getone("x-gitlab-event")
     except KeyError:
         logger.error("Request is missing `x-gitlab-event` header.")
         return web.HTTPBadRequest(text="GitLab event type not found.")
@@ -57,7 +57,7 @@ async def process_push_hook(app: aiohttp.web.Application, push: models.PushHookP
         embed = discord.Embed(
             title=f"{project.namespace}/{project.name}] New branch created `{push.branch}`",
             url=embed_url,
-            colour=discord.Colour.light_grey()
+            colour=discord.Colour.light_grey(),
         )
         embed.set_thumbnail(url=push.project.avatar_url)
         embed.set_author(name=push.user_name, icon_url=push.user_avatar)
@@ -155,7 +155,7 @@ async def process_merge_request_hook(app: aiohttp.web.Application, data: MergeRe
 
 async def send_message(session: aiohttp.ClientSession, content, **kwargs):
     try:
-        webhook = discord.Webhook.from_url(config['Discord']['webhook'], session=session)
+        webhook = discord.Webhook.from_url(config["Discord"]["webhook"], session=session)
         await webhook.send(content, **kwargs)
     except Exception as e:
         web.HTTPInternalServerError(text=str(e))
@@ -172,19 +172,19 @@ async def prepare_session(app: aiohttp.web.Application):
 async def error_handler(request):
     with error_context(request) as context:
         if isinstance(context.err, ValidationError):
-            return web.Response(text=context.err.json(), status=400, content_type='application/json')
+            return web.Response(text=context.err.json(), status=400, content_type="application/json")
         logger.error(context.message, exc_info=True)
         return web.json_response(context.data, status=context.status)
 
 
 def main():
-    if not config.read('config.ini'):
+    if not config.read("config.ini"):
         print("Could not find config file.")
         exit()
     app = web.Application(
         middlewares=[
-            error_middleware(default_handler=error_handler, ignore_exceptions=web.HTTPNotFound)
-        ]
+            error_middleware(default_handler=error_handler, ignore_exceptions=web.HTTPNotFound),
+        ],
     )
     app.add_routes(routes)
     app.cleanup_ctx.append(prepare_session)
