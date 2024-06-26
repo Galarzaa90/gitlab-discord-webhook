@@ -55,6 +55,11 @@ class Project(BaseModel):
     ci_config_path: Union[str, None]
 
 
+class Author(BaseModel):
+    name: str
+    email: str
+
+
 class Commit(BaseModel):
     id: str
     message: str
@@ -64,9 +69,18 @@ class Commit(BaseModel):
     author: Author
 
 
-class Author(BaseModel):
-    name: str
-    email: str
+class Runner(BaseModel):
+    id: int
+    description: str
+    runner_type: str
+    active: bool
+    is_shared: bool
+    tags: list[str]
+
+
+class ArtifactsFile(BaseModel):
+    filename: Union[str, None]
+    size: Union[int, None]
 
 
 class Build(BaseModel):
@@ -87,20 +101,6 @@ class Build(BaseModel):
     runner: Union[Runner, None]
     artifacts_file: ArtifactsFile
     environment: None
-
-
-class Runner(BaseModel):
-    id: int
-    description: str
-    runner_type: str
-    active: bool
-    is_shared: bool
-    tags: list[str]
-
-
-class ArtifactsFile(BaseModel):
-    filename: Union[str, None]
-    size: Union[int, None]
 
 
 class Repository(BaseModel):
@@ -172,6 +172,10 @@ class Issue(BaseModel):
     escalation_status: Union[str, None] = None
     escalation_policy: Union[EscalationPolicy, None] = None
     labels: list[Label]
+
+class MergeParams(BaseModel):
+    force_remove_source_branch: str
+
 
 
 class MergeRequestObjectAttributes(BaseModel):
@@ -289,9 +293,6 @@ class IssueNote(BaseModel):
     severity: str
     customer_relations_contacts: list[Any]
 
-
-class MergeParams(BaseModel):
-    force_remove_source_branch: str
 
 
 class MergeRequest(BaseModel):
