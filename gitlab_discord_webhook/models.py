@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, Literal, Union
+from typing import Any, Literal, Annotated
 
 from pydantic import BaseModel, BeforeValidator
-from typing_extensions import Annotated
 
 
 def parse_gitlab_timestamp(value: str):
@@ -186,7 +185,6 @@ class Issue(BaseModel):
     labels: list[Label]
 
 
-
 class MergeRequestObjectAttributes(BaseModel):
     assignee_id: None
     author_id: int
@@ -234,7 +232,6 @@ class MergeRequestObjectAttributes(BaseModel):
     work_in_progress: bool
     approval_rules: list[Any]
     action: str
-
 
 
 class Note(BaseModel):
@@ -357,8 +354,8 @@ class MergeRequest(BaseModel):
 
 
 class PushHookPayload(BaseModel):
-    object_kind: Literal['push']
-    event_name: Literal['push']
+    object_kind: Literal["push"]
+    event_name: Literal["push"]
     before: str
     after: str
     ref: str
@@ -412,7 +409,7 @@ class NoteHookPayload(BaseModel):
 
 
 class Change(BaseModel):
-    previous: Union[None, str]
+    previous: str | None
     current: str
 
 

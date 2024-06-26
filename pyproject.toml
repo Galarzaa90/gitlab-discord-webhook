@@ -15,7 +15,7 @@ version = "v0.1.0"
 dynamic = ["dependencies"]
 license = { text = "MIT" }
 description = "A middleman between GitLab and Discord webhooks to show better formatted messages."
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 readme = "README.md"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
