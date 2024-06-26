@@ -2,9 +2,11 @@
   "object_kind": "issue",
   "event_type": "issue",
   "user": {
+    "id": 516243,
     "name": "Allan Galarza",
     "username": "Galarzaa90",
-    "avatar_url": "https://assets.gitlab-static.net/uploads/-/system/user/avatar/516243/avatar.png"
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/516243/avatar.png",
+    "email": "[REDACTED]"
   },
   "project": {
     "id": 14942196,
@@ -28,27 +30,32 @@
     "author_id": 516243,
     "closed_at": null,
     "confidential": false,
-    "created_at": "2019-10-21 22:18:06 UTC",
-    "description": "Just description",
+    "created_at": "2024-06-26 16:03:19 UTC",
+    "description": "We are creating a new issue here. No assignee, nothing.",
+    "discussion_locked": null,
     "due_date": null,
-    "id": 26174494,
-    "iid": 1,
+    "id": 148288608,
+    "iid": 2,
     "last_edited_at": null,
     "last_edited_by_id": null,
     "milestone_id": null,
     "moved_to_id": null,
     "duplicated_to_id": null,
     "project_id": 14942196,
-    "relative_position": 1073742323,
+    "relative_position": null,
     "state_id": 1,
     "time_estimate": 0,
-    "title": "New issue",
-    "updated_at": "2019-10-21 22:18:06 UTC",
+    "title": "Test Issue",
+    "updated_at": "2024-06-26 16:03:19 UTC",
     "updated_by_id": null,
     "weight": null,
-    "url": "https://gitlab.com/Galarzaa90/webhook-tests/issues/1",
+    "health_status": null,
+    "type": "Issue",
+    "url": "https://gitlab.com/Galarzaa90/webhook-tests/-/issues/2",
     "total_time_spent": 0,
+    "time_change": 0,
     "human_total_time_spent": null,
+    "human_time_change": null,
     "human_time_estimate": null,
     "assignee_ids": [
 
@@ -58,6 +65,10 @@
 
     ],
     "state": "opened",
+    "severity": "unknown",
+    "customer_relations_contacts": [
+
+    ],
     "action": "open"
   },
   "labels": [
@@ -70,39 +81,35 @@
     },
     "created_at": {
       "previous": null,
-      "current": "2019-10-21 22:18:06 UTC"
+      "current": "2024-06-26 16:03:19 UTC"
     },
     "description": {
       "previous": null,
-      "current": "Just description"
+      "current": "We are creating a new issue here. No assignee, nothing."
     },
     "id": {
       "previous": null,
-      "current": 26174494
+      "current": 148288608
     },
     "iid": {
       "previous": null,
-      "current": 1
+      "current": 2
     },
     "project_id": {
       "previous": null,
       "current": 14942196
     },
-    "relative_position": {
+    "time_estimate": {
       "previous": null,
-      "current": 1073742323
+      "current": 0
     },
     "title": {
       "previous": null,
-      "current": "New issue"
+      "current": "Test Issue"
     },
     "updated_at": {
       "previous": null,
-      "current": "2019-10-21 22:18:06 UTC"
-    },
-    "total_time_spent": {
-      "previous": null,
-      "current": 0
+      "current": "2024-06-26 16:03:19 UTC"
     }
   },
   "repository": {

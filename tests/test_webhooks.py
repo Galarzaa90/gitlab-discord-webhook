@@ -1,26 +1,28 @@
 import json
 import os
-import asynctest
+import unittest
+from unittest.mock import AsyncMock
+
 import discord
 
-import main
-import models
+import gitlab_discord_webhook.__main__ as main
+from gitlab_discord_webhook.models import IssueHookPayload
 
 
 def _load_json(file_name):
-    with open(os.path.join("resources", file_name)) as f:
+    with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), "resources", file_name)) as f:
         return json.load(f)
 
 
-class TestWebhooks(asynctest.TestCase):
+class TestWebhooks(unittest.IsolatedAsyncioTestCase):
 
-    async def test_process_push_hook_new_commits(self):
-        data = _load_json("push_commit.json")
-        push = models.PushHook(**data)
+    async def test_process_issue_hook_new_issue(self):
+        data = _load_json("issue_new.json")
+        push = IssueHookPayload.model_validate(data)
 
-        main.send_message = asynctest.CoroutineMock()
+        main.send_message = AsyncMock()
 
-        await main.process_push_hook(push)
+        await main.process_issue_hook(push)
 
         main.send_message.assert_called_once()
         embed = main.send_message.call_args[1]["embed"]

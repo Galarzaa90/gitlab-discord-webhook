@@ -5,6 +5,7 @@ import discord
 from aiohttp import web
 
 from gitlab_discord_webhook import models
+from gitlab_discord_webhook.models import IssueHookPayload, MergeRequestHookPayload, NoteHookPayload, PushHookPayload
 
 config = configparser.ConfigParser()
 
@@ -21,21 +22,17 @@ async def receive_webhook(request: web.Request):
         return web.HTTPBadRequest(text="GitLab event type not found.")
     body = await request.json()
     if event_type == "Push Hook":
-        data = models.PushHook(**body)
-        await process_push_hook(data)
+        await process_push_hook(PushHookPayload.model_validate(body))
     if event_type == "Issue Hook":
-        data = models.IssueHook(**body)
-        await process_issue_hook(data)
+        await process_issue_hook(IssueHookPayload.model_validate(body))
     if event_type == "Note Hook":
-        data = models.NoteHook(**body)
-        await process_note_hook(data)
+        await process_note_hook(NoteHookPayload.model_validate(body))
     if event_type == "Merge Request Hook":
-        data = models.MergeRequestHook(**body)
-        await process_merge_request_hook(data)
+        await process_merge_request_hook(MergeRequestHookPayload.model_validate(body))
     return web.Response(text="OK")
 
 
-async def process_push_hook(push: models.PushHook):
+async def process_push_hook(push: models.PushHookPayload):
     """Builds and sends an embed message with new commits information."""
     repository = push.repository
     project = push.project
@@ -73,7 +70,7 @@ async def process_push_hook(push: models.PushHook):
     await send_message(None, embed=embed, avatar_url=push.project.avatar_url)
 
 
-async def process_issue_hook(issue_data):
+async def process_issue_hook(issue_data: IssueHookPayload):
     """Builds and sends an embed message with issues information."""
     project = issue_data.project
     issue = issue_data.issue
@@ -88,13 +85,18 @@ async def process_issue_hook(issue_data):
     elif issue.action == "close":
         action = "Issue closed"
         colour = discord.Colour.dark_grey()
-    embed = discord.Embed(title=f"[{project.namespace}/{project.name}] {action}: #{issue.iid} {issue.title}"
-                          , url=issue.url, description=description, colour=colour)
+    embed = discord.Embed(
+        title=f"[{project.namespace}/{project.name}] {action}: #{issue.iid} {issue.title}",
+        url=issue.url,
+        description=description,
+        colour=colour,
+        timestamp=issue.created_at,
+    )
     embed.set_author(name=user.username, icon_url=user.avatar_url)
     await send_message(None, embed=embed)
 
 
-async def process_note_hook(data: models.NoteHook):
+async def process_note_hook(data: NoteHookPayload):
     """Builds and sends an embed message with notes information."""
     note = data.note
     user = data.user
@@ -105,16 +107,16 @@ async def process_note_hook(data: models.NoteHook):
     if data.issue:
         issue = data.issue
         embed.title = f"[{project.namespace}/{project.name}] New comment on issue #{issue.iid}: {issue.title}"
-    if data.commit:
+    elif data.commit:
         commit = data.commit
         embed.title = f"[{project.namespace}/{project.name}] New comment on commit `{commit.id[:7]}`"
-    if data.merge_request:
+    elif data.merge_request:
         merge = data.merge_request
         embed.title = f"[{project.namespace}/{project.name}] New comment on merge request !{merge.iid}: {merge.title}"
     await send_message(None, embed=embed)
 
 
-async def process_merge_request_hook(data: models.MergeRequestHook):
+async def process_merge_request_hook(data: MergeRequestHookPayload):
     """Builds and sends an embed message with merge request information."""
     project = data.project
     merge = data.merge_request

@@ -1,286 +1,437 @@
-class BaseHook:
-    """
-    Contains the base elements of a GitHub Webhook Request
-    """
+from __future__ import annotations
 
-    def __init__(self, **kwargs):
-        self.object_kind = kwargs.get("object_kind")
-        self.event_type = kwargs.get("event_type")
-        self.repository = Repository(**kwargs.get("repository", {}))
-        self.project = Project(**kwargs.get("project", {}))
+import datetime
+from typing import Any, Literal, Union
+
+from pydantic import BaseModel, BeforeValidator
+from typing_extensions import Annotated
 
 
-class AssignableHook(BaseHook):
-    """Contains the attributes assignable requests have."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.user = User(**kwargs.get("user", {}))
-        self.labels = [Label(**kwarg) for kwarg in kwargs.get("labels", [])]
-        self.changes = kwargs.get("changes", {})
-        self.assignees = [User(**kwarg) for kwarg in kwargs.get("assignees", [])]
+def parse_gitlab_timestamp(value: str):
+    return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S %Z").replace(tzinfo=datetime.timezone.utc)
 
 
-class IssueHook(AssignableHook):
-    """A Issue Hook, sent went a Issue is created, updated or closed."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.issue = Issue(**kwargs.get("object_attributes", {}))
+GitLabTimestamp = Annotated[datetime.datetime, BeforeValidator(parse_gitlab_timestamp)]
 
 
-class MergeRequestHook(AssignableHook):
-    """A Merge Request Hook, sent when a Merge Request is created, updated, merged or closed."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.merge_request = MergeRequest(**kwargs.get("object_attributes", {}))
-
-
-class NoteHook(BaseHook):
-    """A Note Hook, for comments in commits, issues and merge requests."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.note = Note(**kwargs.get("object_attributes", {}))
-        self.user = User(**kwargs.get("user", {}))
-        self.issue = Issue(**kwargs.get("issue", {})) if "issue" in kwargs else None
-        self.commit = Commit(**kwargs.get("commit", {})) if "commit" in kwargs else None
-        self.merge_request = MergeRequest(**kwargs.get("merge_request", {})) if "merge_request" in kwargs else None
+class BaseSchema(BaseModel):
+    object_kind: str
+    object_attributes: ObjectAttributes
+    merge_request: None
+    user: User
+    project: Project
+    commit: Commit
+    builds: list[Build]
 
 
-class PushHook(BaseHook):
-    """A Push Hook, sent every time changes are pushed to a git repository."""
+class ObjectAttributes(BaseModel):
+    id: int
+    iid: int
+    name: None
+    ref: str
+    tag: bool
+    sha: str
+    before_sha: str
+    source: str
+    status: str
+    detailed_status: str
+    stages: list[str]
+    created_at: str
+    finished_at: str
+    duration: int
+    queued_duration: int
+    variables: list[Any]
+    url: str
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.before = kwargs.get("before")
-        self.after = kwargs.get("after")
-        self.ref = kwargs.get("ref")
-        self.checkout_sha = kwargs.get("checkout_sha")
-        self.message = kwargs.get("message")
-        self.user_id = kwargs.get("user_id")
-        self.user_username = kwargs.get("user_username")
-        self.user_name = kwargs.get("user_name")
-        self.user_email = kwargs.get("user_email")
-        self.user_avatar = kwargs.get("user_avatar")
-        self.project_id = kwargs.get("project_id")
-        self.commits = [Commit(**kwarg) for kwarg in kwargs.get("commits", [])]
-        self.total_commits_count = kwargs.get("total_commits_count")
+
+class User(BaseModel):
+    id: int
+    name: str
+    username: str
+    avatar_url: str
+    email: str
+
+
+class Project(BaseModel):
+    id: int
+    name: str
+    description: str | None
+    web_url: str
+    avatar_url: str | None
+    git_ssh_url: str
+    git_http_url: str
+    namespace: str
+    visibility_level: int
+    path_with_namespace: str
+    default_branch: str
+    ci_config_path: str | None
+
+
+class Commit(BaseModel):
+    id: str
+    message: str
+    title: str
+    timestamp: datetime.datetime
+    url: str
+    author: Author
+
+
+class Author(BaseModel):
+    name: str
+    email: str
+
+
+class Build(BaseModel):
+    id: int
+    stage: str
+    name: str
+    status: str
+    created_at: str
+    started_at: str | None
+    finished_at: str | None
+    duration: float | None
+    queued_duration: float | None
+    failure_reason: str | None
+    when: str
+    manual: bool
+    allow_failure: bool
+    user: User
+    runner: Runner | None
+    artifacts_file: ArtifactsFile
+    environment: None
+
+
+class Runner(BaseModel):
+    id: int
+    description: str
+    runner_type: str
+    active: bool
+    is_shared: bool
+    tags: list[str]
+
+
+class ArtifactsFile(BaseModel):
+    filename: str | None
+    size: int | None
+
+
+class Repository(BaseModel):
+    name: str
+    url: str
+    description: str | None
+    homepage: str
+
+
+class RepositoryDetails(Repository):
+    git_http_url: str
+    git_ssh_url: str
+    visibility_level: int
+
+
+class Label(BaseModel):
+    id: int
+    title: str
+    color: str
+    project_id: int
+    created_at: GitLabTimestamp
+    updated_at: GitLabTimestamp
+    template: bool
+    description: str | None
+    type: str
+    group_id: int | None
+
+
+class EscalationPolicy(BaseModel):
+    id: int
+    name: str
+
+
+class Issue(BaseModel):
+    id: int
+    title: str
+    assignee_ids: list[int]
+    assignee_id: int | None
+    author_id: int
+    project_id: int
+    created_at: GitLabTimestamp
+    updated_at: str
+    updated_by_id: int | None
+    last_edited_at: None
+    last_edited_by_id: None
+    relative_position: int | None
+    description: str
+    milestone_id: None
+    state_id: int
+    confidential: bool
+    discussion_locked: bool | None
+    due_date: None
+    moved_to_id: None
+    duplicated_to_id: None
+    time_estimate: int
+    total_time_spent: int
+    time_change: int
+    human_total_time_spent: None
+    human_time_estimate: None
+    human_time_change: None
+    weight: None
+    health_status: str | None
+    type: str
+    iid: int
+    url: str
+    state: str
+    action: str
+    severity: str
+    escalation_status: str | None = None
+    escalation_policy: EscalationPolicy | None = None
+    labels: list[Label]
+
+
+
+class MergeRequestObjectAttributes(BaseModel):
+    assignee_id: None
+    author_id: int
+    created_at: str
+    description: str
+    draft: bool
+    head_pipeline_id: None
+    id: int
+    iid: int
+    last_edited_at: str | None
+    last_edited_by_id: int | None
+    merge_commit_sha: str | None
+    merge_error: None
+    merge_params: MergeParams
+    merge_status: str
+    merge_user_id: None
+    merge_when_pipeline_succeeds: bool
+    milestone_id: int | None
+    source_branch: str
+    source_project_id: int
+    state_id: int
+    target_branch: str
+    target_project_id: int
+    time_estimate: int
+    title: str
+    updated_at: str
+    updated_by_id: int | None
+    prepared_at: str
+    assignee_ids: list[Any]
+    blocking_discussions_resolved: bool
+    detailed_merge_status: str
+    first_contribution: bool
+    human_time_change: None
+    human_time_estimate: None
+    human_total_time_spent: None
+    labels: list[Label]
+    last_commit: Commit
+    reviewer_ids: list[Any]
+    source: Project
+    state: str
+    target: Project
+    time_change: int
+    total_time_spent: int
+    url: str
+    work_in_progress: bool
+    approval_rules: list[Any]
+    action: str
+
+
+
+class Note(BaseModel):
+    attachment: None
+    author_id: int
+    change_position: None
+    commit_id: str | None
+    created_at: str
+    discussion_id: str
+    id: int
+    line_code: None
+    note: str
+    noteable_id: int | None
+    noteable_type: str
+    original_position: None
+    position: None
+    project_id: int
+    resolved_at: None
+    resolved_by_id: None
+    resolved_by_push: None
+    st_diff: None
+    system: bool
+    type: None
+    updated_at: str
+    updated_by_id: None
+    description: str
+    url: str
+    action: str
+
+
+class IssueNote(BaseModel):
+    author_id: int
+    closed_at: None
+    confidential: bool
+    created_at: str
+    description: str
+    discussion_locked: None
+    due_date: None
+    id: int
+    iid: int
+    last_edited_at: None
+    last_edited_by_id: None
+    milestone_id: None
+    moved_to_id: None
+    duplicated_to_id: None
+    project_id: int
+    relative_position: int
+    state_id: int
+    time_estimate: int
+    title: str
+    updated_at: str
+    updated_by_id: None
+    weight: None
+    health_status: None
+    type: str
+    url: str
+    total_time_spent: int
+    time_change: int
+    human_total_time_spent: None
+    human_time_change: None
+    human_time_estimate: None
+    assignee_ids: list[Any]
+    assignee_id: None
+    labels: list[Any]
+    state: str
+    severity: str
+    customer_relations_contacts: list[Any]
+
+
+class MergeParams(BaseModel):
+    force_remove_source_branch: str
+
+
+class MergeRequest(BaseModel):
+    assignee_id: None
+    author_id: int
+    created_at: str
+    description: str
+    draft: bool
+    head_pipeline_id: None
+    id: int
+    iid: int
+    last_edited_at: str
+    last_edited_by_id: int
+    merge_commit_sha: str
+    merge_error: None
+    merge_params: MergeParams
+    merge_status: str
+    merge_user_id: None
+    merge_when_pipeline_succeeds: bool
+    milestone_id: int
+    source_branch: str
+    source_project_id: int
+    state_id: int
+    target_branch: str
+    target_project_id: int
+    time_estimate: int
+    title: str
+    updated_at: str
+    updated_by_id: int
+    prepared_at: str
+    assignee_ids: list[Any]
+    blocking_discussions_resolved: bool
+    detailed_merge_status: str
+    first_contribution: bool
+    human_time_change: None
+    human_time_estimate: None
+    human_total_time_spent: None
+    labels: list[Label]
+    last_commit: Commit
+    reviewer_ids: list[Any]
+    source: Project
+    state: str
+    target: Project
+    time_change: int
+    total_time_spent: int
+    url: str
+    work_in_progress: bool
+    approval_rules: list[Any]
+
+
+class PushHookPayload(BaseModel):
+    object_kind: Literal['push']
+    event_name: Literal['push']
+    before: str
+    after: str
+    ref: str
+    ref_protected: bool
+    checkout_sha: str | None
+    message: str | None
+    user_id: int
+    user_name: str
+    user_username: str
+    user_email: str
+    user_avatar: str
+    project_id: int
+    project: Project
+    commits: list[Commit]
+    total_commits_count: int
+    push_options: Any
+    repository: RepositoryDetails
 
     @property
     def branch(self):
         return self.ref.replace("refs/heads/", "")
 
+
+class IssueHookPayload(BaseModel):
+    object_kind: Literal['issue']
+    event_type: Literal['issue']
+    user: User
+    project: Project
+    object_attributes: Issue
+
     @property
-    def user(self):
-        return User(name=self.user_name, username=self.user_username, avatar_url=self.user_avatar)
+    def issue(self) -> Issue:
+        return self.object_attributes
 
 
-class Author:
-    """Represents a git author."""
+class NoteHookPayload(BaseModel):
+    object_kind: Literal['note']
+    event_type: Literal['note']
+    user: User
+    project_id: int
+    project: Project
+    object_attributes: Note
+    repository: Repository
+    issue: IssueNote | None = None
+    commit: Commit | None = None
+    merge_request: MergeRequest | None = None
 
-    def __init__(self, **kwargs):
-        self.name = kwargs.get("name")
-        self.email = kwargs.get("email")
-
-    def __repr__(self):
-        return "<%s name=%r email=%r>" % (self.__class__.__name__, self.name, self.email)
-
-
-class Commit:
-    def __init__(self, **kwargs):
-        self.id = kwargs.get("id")
-        self.message = kwargs.get("message")
-        self.timestamp = kwargs.get("timestamp")
-        self.url = kwargs.get("url")
-        self.author = Author(**kwargs.get("author", {}))
-        self.added = kwargs.get("added")
-        self.changed = kwargs.get("changed")
-        self.removed = kwargs.get("removed")
-
-    def __repr__(self):
-        return "<%s id=%r message=%r>" % (self.__class__.__name__, self.id, self.message)
+    @property
+    def note(self) -> Note:
+        return self.object_attributes
 
 
-class Issue:
-    """Represents an Issue"""
-
-    def __init__(self, **kwargs):
-        self.author_id = kwargs.get("author_id")
-        self.closed_at = kwargs.get("closed_at")
-        self.confidential = kwargs.get("confidential")
-        self.created_at = kwargs.get("created_at")
-        self.description = kwargs.get("description")
-        self.due_date = kwargs.get("due_date")
-        self.id = kwargs.get("id")
-        self.iid = kwargs.get("iid")
-        self.last_edited_at = kwargs.get("last_edited_at")
-        self.last_edited_by = kwargs.get("last_edited_by")
-        self.milestone_id = kwargs.get("milestone_id")
-        self.moved_to_id = kwargs.get("moved_to_id")
-        self.duplicated_to_id = kwargs.get("duplicated_to_id")
-        self.project_id = kwargs.get("project_id")
-        self.relative_position = kwargs.get("relative_position")
-        self.state_id = kwargs.get("state_id")
-        self.time_estimate = kwargs.get("time_estimate")
-        self.title = kwargs.get("title")
-        self.updated_at = kwargs.get("updated_at")
-        self.updated_by_id = kwargs.get("updated_by_id")
-        self.weight = kwargs.get("weight")
-        self.url = kwargs.get("url")
-        self.total_time_spent = kwargs.get("total_time_spent")
-        self.human_total_time_spent = kwargs.get("human_total_time_spent")
-        self.human_time_estimate = kwargs.get("state_id")
-        self.assignee_ids = kwargs.get("assignee_ids", [])
-        self.assignee_id = kwargs.get("assignee_id")
-        self.state = kwargs.get("sate")
-        self.action = kwargs.get("action")
-
-    def __repr__(self):
-        return "<%s title=%r iid=%r>" % (self.__class__.__name__, self.title, self.iid)
+class Change(BaseModel):
+    previous: Union[None, str]
+    current: str
 
 
-class Label:
-    """Represents a label that can be assigned to issues or merge requests."""
-
-    def __init__(self, **kwargs):
-        self.id = kwargs.get("id")
-        self.title = kwargs.get("title")
-        self.color = kwargs.get("color")
-        self.project_id = kwargs.get("project_id")
-        self.created_at = kwargs.get("created_at")
-        self.updated_at = kwargs.get("updated_at")
-        self.template = kwargs.get("template")
-        self.description = kwargs.get("description")
-        self.type = kwargs.get("type")
-        self.group_id = kwargs.get("group_id")
-
-    def __repr__(self):
-        return "<Label title=%r>" % self.title
+class Changes(BaseModel):
+    merge_status: Change
+    updated_at: Change
+    prepared_at: Change
 
 
-class MergeRequest:
-    """Represents a merge request"""
+class MergeRequestHookPayload(BaseModel):
+    object_kind: Literal["merge_request"]
+    event_type: Literal["merge_request"]
+    user: User
+    project: Project
+    object_attributes: MergeRequestObjectAttributes
+    labels: list[Label]
+    changes: Changes
+    repository: Repository
 
-    def __init__(self, **kwargs):
-        self.assignee_id = kwargs.get("assignee_id")
-        self.author_id = kwargs.get("author_id")
-        self.created_at = kwargs.get("created_at")
-        self.description = kwargs.get("description")
-        self.head_pipeline_id = kwargs.get("head_pipeline_id")
-        self.id = kwargs.get("id")
-        self.iid = kwargs.get("iid")
-        self.last_edited_at = kwargs.get("last_edited_at")
-        self.last_edited_by = kwargs.get("last_edited_by")
-        self.merge_error = kwargs.get("merge_error")
-        self.merge_params = kwargs.get("merge_params")
-        self.merge_status = kwargs.get("merge_status")
-        self.merge_user_id = kwargs.get("merge_user_id")
-        self.merge_when_pipeline_succeeds = kwargs.get("merge_when_pipeline_succeeds")
-        self.milestone_id = kwargs.get("milestone_id")
-        self.source_branch = kwargs.get("source_branch")
-        self.source_project_id = kwargs.get("source_project_id")
-        self.state = kwargs.get("state")
-        self.target_branch = kwargs.get("target_branch")
-        self.target_project_id = kwargs.get("target_project_id")
-        self.time_estimate = kwargs.get("time_estimate")
-        self.title = kwargs.get("title")
-        self.updated_at = kwargs.get("updated_at")
-        self.updated_by_id = kwargs.get("updated_by_id")
-        self.url = kwargs.get("url")
-        self.source = Project(**kwargs.get("source", {}))
-        self.target = Project(**kwargs.get("target", {}))
-        self.last_commit = Commit(**kwargs.get("last_commit", {}))
-        self.work_in_progress = kwargs.get("work_in_progress")
-        self.total_time_spent = kwargs.get("total_time_spent")
-        self.human_total_time_spent = kwargs.get("human_total_time_spent")
-        self.human_time_estimate = kwargs.get("human_time_estimate")
-        self.assignee_ids = kwargs.get("assignee_ids", [])
-        self.action = kwargs.get("action")
-
-    def __repr__(self):
-        return "<%s title=%r iid=%r>" % (self.__class__.__name__, self.title, self.iid)
-
-
-class Note:
-    """Information about the note or comment."""
-
-    def __init__(self, **kwargs):
-        self.attachment = kwargs.get("attachment")
-        self.author_id = kwargs.get("author_id")
-        self.change_position = kwargs.get("change_position")
-        self.commit_id = kwargs.get("commit_id")
-        self.created_at = kwargs.get("created_at")
-        self.discussion_id = kwargs.get("discussion_id")
-        self.id = kwargs.get("id")
-        self.line_code = kwargs.get("line_code")
-        self.note = kwargs.get("note")
-        self.noteable_id = kwargs.get("noteable_id")
-        self.noteable_type = kwargs.get("noteable_type")
-        self.original_position = kwargs.get("original_position")
-        self.position = kwargs.get("position")
-        self.project_id = kwargs.get("project_id")
-        self.resolved_at = kwargs.get("resolved_at")
-        self.resolved_by_id = kwargs.get("resolved_by_id")
-        self.resolved_by_push = kwargs.get("resolved_by_push")
-        self.st_diff = kwargs.get("st_diff")
-        self.system = kwargs.get("system")
-        self.type = kwargs.get("type")
-        self.updated_at = kwargs.get("updated_at")
-        self.updated_by_id = kwargs.get("updated_by_id")
-        self.description = kwargs.get("description")
-        self.url = kwargs.get("url")
-
-
-class Project:
-    """Represents a GitLab project."""
-
-    def __init__(self, **kwargs):
-        self.id = kwargs.get("id")
-        self.name = kwargs.get("name")
-        self.description = kwargs.get("description")
-        self.web_url = kwargs.get("web_url")
-        self.avatar_url = kwargs.get("avatar_url")
-        self.git_ssh_url = kwargs.get("git_ssh_url")
-        self.git_http_url = kwargs.get("git_http_url")
-        self.namespace = kwargs.get("namespace")
-        self.visibility_level = kwargs.get("visibility_level")
-        self.path_with_namespace = kwargs.get("path_with_namespace")
-        self.default_branch = kwargs.get("default_branch")
-        self.ci_config_path = kwargs.get("ci_config_path")
-        self.homepage = kwargs.get("homepage")
-        self.url = kwargs.get("url")
-        self.ssh_url = kwargs.get("ssh_url")
-        self.http_url = kwargs.get("http_url")
-
-    def __repr__(self):
-        return "<%s name=%r namespace=%r>" % (self.__class__.__name__, self.name, self.namespace)
-
-
-class Repository:
-    """Represents a git repository."""
-
-    def __init__(self, **kwargs):
-        self.name = kwargs.get("name")
-        self.url = kwargs.get("url")
-        self.description = kwargs.get("description")
-        self.homepage = kwargs.get("homepage")
-        self.git_http_url = kwargs.get("git_http_url")
-        self.git_ssh_url = kwargs.get("git_ssh_url")
-        self.visibility_level = kwargs.get("visibility_level")
-
-    def __repr__(self):
-        return "<%s name=%r>" % (self.__class__.__name__, self.name)
-
-
-class User:
-    """Represents a user."""
-
-    def __init__(self, **kwargs):
-        self.name = kwargs.get("name")
-        self.username = kwargs.get("username")
-        self.avatar_url = kwargs.get("avatar_url")
-
-    def __repr__(self):
-        return "<%s username=%r>" % (self.__class__.__name__, self.username)
+    @property
+    def merge_request(self) -> MergeRequestObjectAttributes:
+        return self.object_attributes
