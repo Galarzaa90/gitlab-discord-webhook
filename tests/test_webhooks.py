@@ -3,6 +3,7 @@ import os
 import unittest
 from unittest.mock import AsyncMock
 
+import aiohttp
 import discord
 
 import gitlab_discord_webhook.__main__ as main
@@ -15,6 +16,11 @@ def _load_json(file_name):
 
 
 class TestWebhooks(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.session = aiohttp.ClientSession()
+
+    async def asyncTearDown(self):
+        await self.session.close()
 
     async def test_process_issue_hook_new_issue(self):
         data = _load_json("issue_new.json")
@@ -22,9 +28,8 @@ class TestWebhooks(unittest.IsolatedAsyncioTestCase):
 
         main.send_message = AsyncMock()
 
-        await main.process_issue_hook(push)
+        await main.process_issue_hook(AsyncMock(), push)
 
         main.send_message.assert_called_once()
         embed = main.send_message.call_args[1]["embed"]
         self.assertIsInstance(embed, discord.Embed)
-

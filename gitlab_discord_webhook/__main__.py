@@ -3,6 +3,12 @@ import configparser
 import aiohttp
 import discord
 from aiohttp import web
+from aiohttp_middlewares import (
+    error_context,
+    error_middleware,
+)
+from loguru import logger
+from pydantic import ValidationError
 
 from gitlab_discord_webhook import models
 from gitlab_discord_webhook.models import IssueHookPayload, MergeRequestHookPayload, NoteHookPayload, PushHookPayload
@@ -10,6 +16,8 @@ from gitlab_discord_webhook.models import IssueHookPayload, MergeRequestHookPayl
 config = configparser.ConfigParser()
 
 routes = web.RouteTableDef()
+
+client_session = web.AppKey('client_session', aiohttp.ClientSession)
 
 EMPTY_COMMIT = "0000000000000000000000000000000000000000"
 
@@ -19,20 +27,22 @@ async def receive_webhook(request: web.Request):
     try:
         event_type = request.headers.getone('x-gitlab-event')
     except KeyError:
+        logger.error("Request is missing `x-gitlab-event` header.")
         return web.HTTPBadRequest(text="GitLab event type not found.")
+    logger.info("Received `{}` event", event_type)
     body = await request.json()
     if event_type == "Push Hook":
-        await process_push_hook(PushHookPayload.model_validate(body))
+        await process_push_hook(request.app, PushHookPayload.model_validate(body))
     if event_type == "Issue Hook":
-        await process_issue_hook(IssueHookPayload.model_validate(body))
+        await process_issue_hook(request.app, IssueHookPayload.model_validate(body))
     if event_type == "Note Hook":
-        await process_note_hook(NoteHookPayload.model_validate(body))
+        await process_note_hook(request.app, NoteHookPayload.model_validate(body))
     if event_type == "Merge Request Hook":
-        await process_merge_request_hook(MergeRequestHookPayload.model_validate(body))
+        await process_merge_request_hook(request.app, MergeRequestHookPayload.model_validate(body))
     return web.Response(text="OK")
 
 
-async def process_push_hook(push: models.PushHookPayload):
+async def process_push_hook(app: aiohttp.web.Application, push: models.PushHookPayload):
     """Builds and sends an embed message with new commits information."""
     repository = push.repository
     project = push.project
@@ -44,15 +54,19 @@ async def process_push_hook(push: models.PushHookPayload):
         embed_url = f"{repository.homepage}/commit/{push.after[:7]}"
 
     if push.before == EMPTY_COMMIT:
-        embed = discord.Embed(title=f"[{project.namespace}/{project.name}] New branch created {push.branch}",
-                              url=embed_url, colour=discord.Colour.light_grey())
+        embed = discord.Embed(
+            title=f"{project.namespace}/{project.name}] New branch created `{push.branch}`",
+            url=embed_url,
+            colour=discord.Colour.light_grey()
+        )
+        embed.set_thumbnail(url=push.project.avatar_url)
         embed.set_author(name=push.user_name, icon_url=push.user_avatar)
-        await send_message(None, embed=embed, avatar_url=push.project.avatar_url)
+        await send_message(app[client_session], None, embed=embed)
     elif push.after == EMPTY_COMMIT:
         embed = discord.Embed(title=f"[{project.namespace}/{project.name}] Branch deleted {push.branch}",
                               url=embed_url, colour=discord.Colour.light_grey())
         embed.set_author(name=push.user_name, icon_url=push.user_avatar)
-        await send_message(None, embed=embed, avatar_url=push.project.avatar_url)
+        await send_message(app[client_session], None, embed=embed, avatar_url=push.project.avatar_url)
 
     # If there are no commits, do not show a message
     if not push.total_commits_count:
@@ -62,15 +76,16 @@ async def process_push_hook(push: models.PushHookPayload):
                                 f"{push.total_commits_count} new {commit_str}",
                           url=embed_url, colour=discord.Colour.blurple())
     embed.set_author(name=push.user_name, icon_url=push.user_avatar)
+    embed.set_thumbnail(url=push.project.avatar_url)
     embed.description = ""
     for commit in push.commits:
         message = commit.message.splitlines()[0]
         embed.description += f"[`{commit.id[:7]}`]({commit.url}) {message} - {commit.author.name}\n"
     print("Sending push message")
-    await send_message(None, embed=embed, avatar_url=push.project.avatar_url)
+    await send_message(app[client_session], None, embed=embed)
 
 
-async def process_issue_hook(issue_data: IssueHookPayload):
+async def process_issue_hook(app: aiohttp.web.Application, issue_data: IssueHookPayload):
     """Builds and sends an embed message with issues information."""
     project = issue_data.project
     issue = issue_data.issue
@@ -93,10 +108,10 @@ async def process_issue_hook(issue_data: IssueHookPayload):
         timestamp=issue.created_at,
     )
     embed.set_author(name=user.username, icon_url=user.avatar_url)
-    await send_message(None, embed=embed)
+    await send_message(app[client_session], None, embed=embed)
 
 
-async def process_note_hook(data: NoteHookPayload):
+async def process_note_hook(app: aiohttp.web.Application, data: NoteHookPayload):
     """Builds and sends an embed message with notes information."""
     note = data.note
     user = data.user
@@ -113,10 +128,10 @@ async def process_note_hook(data: NoteHookPayload):
     elif data.merge_request:
         merge = data.merge_request
         embed.title = f"[{project.namespace}/{project.name}] New comment on merge request !{merge.iid}: {merge.title}"
-    await send_message(None, embed=embed)
+    await send_message(app[client_session], None, embed=embed)
 
 
-async def process_merge_request_hook(data: MergeRequestHookPayload):
+async def process_merge_request_hook(app: aiohttp.web.Application, data: MergeRequestHookPayload):
     """Builds and sends an embed message with merge request information."""
     project = data.project
     merge = data.merge_request
@@ -135,25 +150,44 @@ async def process_merge_request_hook(data: MergeRequestHookPayload):
                           url=merge.url, description=description, colour=colour)
     embed.set_author(name=user.username, icon_url=user.avatar_url)
     embed.set_footer(text=f"{merge.source_branch} → {merge.target_branch}")
-    await send_message(None, embed=embed)
+    await send_message(app[client_session], None, embed=embed)
 
 
-async def send_message(content, **kwargs):
-    async with aiohttp.ClientSession() as session:
-        try:
-            webhook = discord.Webhook.from_url(config['Discord']['webhook'], session=session)
-            await webhook.send(content, **kwargs)
-        except Exception as e:
-            web.HTTPInternalServerError(text=str(e))
+async def send_message(session: aiohttp.ClientSession, content, **kwargs):
+    try:
+        webhook = discord.Webhook.from_url(config['Discord']['webhook'], session=session)
+        await webhook.send(content, **kwargs)
+    except Exception as e:
+        web.HTTPInternalServerError(text=str(e))
+
+
+async def prepare_session(app: aiohttp.web.Application):
+    logger.info("Creating ClientSession.")
+    app[client_session] = aiohttp.ClientSession()
+    yield
+    logger.info("Closing ClientSession.")
+    await app[client_session].close()
+
+
+async def error_handler(request):
+    with error_context(request) as context:
+        if isinstance(context.err, ValidationError):
+            return web.Response(text=context.err.json(), status=400, content_type='application/json')
+        logger.error(context.message, exc_info=True)
+        return web.json_response(context.data, status=context.status)
 
 
 def main():
     if not config.read('config.ini'):
         print("Could not find config file.")
         exit()
-    app = web.Application()
+    app = web.Application(
+        middlewares=[
+            error_middleware(default_handler=error_handler, ignore_exceptions=web.HTTPNotFound)
+        ]
+    )
     app.add_routes(routes)
-
+    app.cleanup_ctx.append(prepare_session)
     web.run_app(app, port=7400)
 
 
