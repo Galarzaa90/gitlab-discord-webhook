@@ -1,8 +1,8 @@
-
 class BaseHook:
     """
     Contains the base elements of a GitHub Webhook Request
     """
+
     def __init__(self, **kwargs):
         self.object_kind = kwargs.get("object_kind")
         self.event_type = kwargs.get("event_type")
@@ -12,6 +12,7 @@ class BaseHook:
 
 class AssignableHook(BaseHook):
     """Contains the attributes assignable requests have."""
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.user = User(**kwargs.get("user", {}))
@@ -38,6 +39,7 @@ class MergeRequestHook(AssignableHook):
 
 class NoteHook(BaseHook):
     """A Note Hook, for comments in commits, issues and merge requests."""
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.note = Note(**kwargs.get("object_attributes", {}))
@@ -49,6 +51,7 @@ class NoteHook(BaseHook):
 
 class PushHook(BaseHook):
     """A Push Hook, sent every time changes are pushed to a git repository."""
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.before = kwargs.get("before")
@@ -76,6 +79,7 @@ class PushHook(BaseHook):
 
 class Author:
     """Represents a git author."""
+
     def __init__(self, **kwargs):
         self.name = kwargs.get("name")
         self.email = kwargs.get("email")
@@ -139,6 +143,7 @@ class Issue:
 
 class Label:
     """Represents a label that can be assigned to issues or merge requests."""
+
     def __init__(self, **kwargs):
         self.id = kwargs.get("id")
         self.title = kwargs.get("title")
@@ -157,6 +162,7 @@ class Label:
 
 class MergeRequest:
     """Represents a merge request"""
+
     def __init__(self, **kwargs):
         self.assignee_id = kwargs.get("assignee_id")
         self.author_id = kwargs.get("author_id")
@@ -199,6 +205,7 @@ class MergeRequest:
 
 class Note:
     """Information about the note or comment."""
+
     def __init__(self, **kwargs):
         self.attachment = kwargs.get("attachment")
         self.author_id = kwargs.get("author_id")
@@ -228,6 +235,7 @@ class Note:
 
 class Project:
     """Represents a GitLab project."""
+
     def __init__(self, **kwargs):
         self.id = kwargs.get("id")
         self.name = kwargs.get("name")
@@ -252,6 +260,7 @@ class Project:
 
 class Repository:
     """Represents a git repository."""
+
     def __init__(self, **kwargs):
         self.name = kwargs.get("name")
         self.url = kwargs.get("url")
@@ -267,6 +276,7 @@ class Repository:
 
 class User:
     """Represents a user."""
+
     def __init__(self, **kwargs):
         self.name = kwargs.get("name")
         self.username = kwargs.get("username")

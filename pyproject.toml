@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "gitlab-webhook"
+authors = [
+    { name = "Allan Galarza", email = "allan.galarza@gmail.com" }
+]
+maintainers = [
+    { name = "Allan Galarza", email = "allan.galarza@gmail.com" }
+]
+version = "v0.1.0"
+license = { text = "MIT" }
+description = "A middleman between GitLab and Discord webhooks to show better formatted messages."
+requires-python = ">=3.8"
+readme = "README.md"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python",
+    "Topic :: Internet",
+    "Topic :: Software Development",
+    "Topic :: System :: Logging",
+    "Topic :: Utilities",
+]
+
+[project.scripts]
+gitlab-discord-webhook = "gitlab_discord_webhook.__main__:main"
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }

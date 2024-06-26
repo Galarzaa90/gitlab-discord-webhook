@@ -4,7 +4,7 @@ A middleman between GitLab and Discord webhooks to show better formatted message
 ## Use instructions
 In order to use this, you must have a public IP address, with port 7400 open.
 
-- Install modules in `requirements.txt` (python 3.5.3 or higher)
+- Install modules in `requirements.txt` (python 3.8 or higher)
 ```shell
 python -m pip install -r requirements.txt
 ```

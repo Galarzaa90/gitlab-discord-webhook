@@ -4,7 +4,7 @@ import aiohttp
 import discord
 from aiohttp import web
 
-import models
+from gitlab_discord_webhook import models
 
 config = configparser.ConfigParser()
 
@@ -139,14 +139,13 @@ async def process_merge_request_hook(data: models.MergeRequestHook):
 async def send_message(content, **kwargs):
     async with aiohttp.ClientSession() as session:
         try:
-            webhook = discord.Webhook.from_url(config['Discord']['webhook'],
-                                               adapter=discord.AsyncWebhookAdapter(session))
+            webhook = discord.Webhook.from_url(config['Discord']['webhook'], session=session)
             await webhook.send(content, **kwargs)
         except Exception as e:
             web.HTTPInternalServerError(text=str(e))
 
 
-if __name__ == "__main__":
+def main():
     if not config.read('config.ini'):
         print("Could not find config file.")
         exit()
@@ -154,3 +153,7 @@ if __name__ == "__main__":
     app.add_routes(routes)
 
     web.run_app(app, port=7400)
+
+
+if __name__ == "__main__":
+    main()
