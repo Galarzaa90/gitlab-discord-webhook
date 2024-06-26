@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, Literal, Annotated
+from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, BeforeValidator
 
@@ -54,16 +54,16 @@ class User(BaseModel):
 class Project(BaseModel):
     id: int
     name: str
-    description: str | None
+    description: Union[str, None]
     web_url: str
-    avatar_url: str | None
+    avatar_url: Union[str, None]
     git_ssh_url: str
     git_http_url: str
     namespace: str
     visibility_level: int
     path_with_namespace: str
     default_branch: str
-    ci_config_path: str | None
+    ci_config_path: Union[str, None]
 
 
 class Commit(BaseModel):
@@ -86,16 +86,16 @@ class Build(BaseModel):
     name: str
     status: str
     created_at: str
-    started_at: str | None
-    finished_at: str | None
-    duration: float | None
-    queued_duration: float | None
-    failure_reason: str | None
+    started_at: Union[str, None]
+    finished_at: Union[str, None]
+    duration: Union[float, None]
+    queued_duration: Union[float, None]
+    failure_reason: Union[str, None]
     when: str
     manual: bool
     allow_failure: bool
     user: User
-    runner: Runner | None
+    runner: Union[Runner, None]
     artifacts_file: ArtifactsFile
     environment: None
 
@@ -110,14 +110,14 @@ class Runner(BaseModel):
 
 
 class ArtifactsFile(BaseModel):
-    filename: str | None
-    size: int | None
+    filename: Union[str, None]
+    size: Union[int, None]
 
 
 class Repository(BaseModel):
     name: str
     url: str
-    description: str | None
+    description: Union[str, None]
     homepage: str
 
 
@@ -135,9 +135,9 @@ class Label(BaseModel):
     created_at: GitLabTimestamp
     updated_at: GitLabTimestamp
     template: bool
-    description: str | None
+    description: Union[str, None]
     type: str
-    group_id: int | None
+    group_id: Union[int, None]
 
 
 class EscalationPolicy(BaseModel):
@@ -149,20 +149,20 @@ class Issue(BaseModel):
     id: int
     title: str
     assignee_ids: list[int]
-    assignee_id: int | None
+    assignee_id: Union[int, None]
     author_id: int
     project_id: int
     created_at: GitLabTimestamp
     updated_at: str
-    updated_by_id: int | None
+    updated_by_id: Union[int, None]
     last_edited_at: None
     last_edited_by_id: None
-    relative_position: int | None
+    relative_position: Union[int, None]
     description: str
     milestone_id: None
     state_id: int
     confidential: bool
-    discussion_locked: bool | None
+    discussion_locked: Union[bool, None]
     due_date: None
     moved_to_id: None
     duplicated_to_id: None
@@ -173,15 +173,15 @@ class Issue(BaseModel):
     human_time_estimate: None
     human_time_change: None
     weight: None
-    health_status: str | None
+    health_status: Union[str, None]
     type: str
     iid: int
     url: str
     state: str
     action: str
     severity: str
-    escalation_status: str | None = None
-    escalation_policy: EscalationPolicy | None = None
+    escalation_status: Union[str, None] = None
+    escalation_policy: Union[EscalationPolicy, None] = None
     labels: list[Label]
 
 
@@ -194,15 +194,15 @@ class MergeRequestObjectAttributes(BaseModel):
     head_pipeline_id: None
     id: int
     iid: int
-    last_edited_at: str | None
-    last_edited_by_id: int | None
-    merge_commit_sha: str | None
+    last_edited_at: Union[str, None]
+    last_edited_by_id: Union[int, None]
+    merge_commit_sha: Union[str, None]
     merge_error: None
     merge_params: MergeParams
     merge_status: str
     merge_user_id: None
     merge_when_pipeline_succeeds: bool
-    milestone_id: int | None
+    milestone_id: Union[int, None]
     source_branch: str
     source_project_id: int
     state_id: int
@@ -211,7 +211,7 @@ class MergeRequestObjectAttributes(BaseModel):
     time_estimate: int
     title: str
     updated_at: str
-    updated_by_id: int | None
+    updated_by_id: Union[int, None]
     prepared_at: str
     assignee_ids: list[Any]
     blocking_discussions_resolved: bool
@@ -238,13 +238,13 @@ class Note(BaseModel):
     attachment: None
     author_id: int
     change_position: None
-    commit_id: str | None
+    commit_id: Union[str, None]
     created_at: str
     discussion_id: str
     id: int
     line_code: None
     note: str
-    noteable_id: int | None
+    noteable_id: Union[int, None]
     noteable_type: str
     original_position: None
     position: None
@@ -360,8 +360,8 @@ class PushHookPayload(BaseModel):
     after: str
     ref: str
     ref_protected: bool
-    checkout_sha: str | None
-    message: str | None
+    checkout_sha: Union[str, None]
+    message: Union[str, None]
     user_id: int
     user_name: str
     user_username: str
@@ -399,9 +399,9 @@ class NoteHookPayload(BaseModel):
     project: Project
     object_attributes: Note
     repository: Repository
-    issue: IssueNote | None = None
-    commit: Commit | None = None
-    merge_request: MergeRequest | None = None
+    issue: Union[IssueNote, None] = None
+    commit: Union[Commit, None] = None
+    merge_request: Union[MergeRequest, None] = None
 
     @property
     def note(self) -> Note:
@@ -409,7 +409,7 @@ class NoteHookPayload(BaseModel):
 
 
 class Change(BaseModel):
-    previous: str | None
+    previous: Union[str, None]
     current: str
 
 
