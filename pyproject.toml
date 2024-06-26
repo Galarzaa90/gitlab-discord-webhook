@@ -12,6 +12,7 @@ maintainers = [
     { name = "Allan Galarza", email = "allan.galarza@gmail.com" }
 ]
 version = "v0.1.0"
+dynamic = ["dependencies"]
 license = { text = "MIT" }
 description = "A middleman between GitLab and Discord webhooks to show better formatted messages."
 requires-python = ">=3.8"
