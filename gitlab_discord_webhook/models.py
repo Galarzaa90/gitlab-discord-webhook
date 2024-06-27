@@ -1,5 +1,5 @@
 import datetime
-from typing import Annotated, Any, Literal, Optional
+from typing import Annotated, Any, Dict, Literal, Optional
 
 from pydantic import BaseModel, BeforeValidator
 
@@ -192,7 +192,7 @@ class MergeParams(BaseModel):
 
 
 class MergeRequest(BaseModel):
-    assignee: SimpleUser
+    assignee: Optional[SimpleUser] = None
     assignee_id: Optional[int]
     author_id: int
     created_at: GitLabTimestamp
@@ -204,8 +204,8 @@ class MergeRequest(BaseModel):
     labels: list[Label]
     last_commit: Commit
     merge_status: str
-    milestone_id: int
-    position: int
+    milestone_id: Optional[int]
+    position: Optional[int] = None
     source: Project
     source_branch: str
     source_project_id: int
@@ -220,14 +220,14 @@ class MergeRequest(BaseModel):
 
 class MergeRequestDetails(MergeRequest):
     action: str
-    approval_rules: list[Any]
+    approval_rules: Optional[list[Any]] = None
     assignee_ids: list[int]
     blocking_discussions_resolved: bool
     first_contribution: bool
     head_pipeline_id: Any = None
-    human_time_change: None
-    human_time_estimate: None
-    human_total_time_spent: None
+    human_time_change: Optional[str]
+    human_time_estimate: Optional[str]
+    human_total_time_spent: Optional[str]
     last_edited_at: Optional[GitLabTimestamp] = None
     last_edited_by_id: Optional[int] = None
     merge_commit_sha: Optional[str] = None
@@ -238,10 +238,10 @@ class MergeRequestDetails(MergeRequest):
     prepared_at: str
     reviewer_ids: list[Any]
     state_id: int
-    time_change: int
-    time_estimate: int
-    total_time_spent: int
-    updated_by_id: int
+    time_change: Optional[int] = None
+    time_estimate: Optional[int] = None
+    total_time_spent: Optional[int] = None
+    updated_by_id: Optional[int] = None
     url: str
 
 
@@ -344,12 +344,6 @@ class Change(BaseModel):
     current: str
 
 
-class Changes(BaseModel):
-    merge_status: Change
-    updated_at: Change
-    prepared_at: Change
-
-
 class MergeRequestHookPayload(BaseModel):
     object_kind: Literal["merge_request"]
     event_type: Literal["merge_request"]
@@ -357,7 +351,7 @@ class MergeRequestHookPayload(BaseModel):
     project: Project
     object_attributes: MergeRequestDetails
     labels: list[Label]
-    changes: Changes
+    changes: Dict[str, Change]
     repository: Repository
 
     @property

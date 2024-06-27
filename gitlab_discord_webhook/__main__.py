@@ -1,4 +1,6 @@
 import configparser
+import json
+from io import BytesIO
 
 import aiohttp
 import discord
@@ -173,12 +175,26 @@ async def prepare_session(app: aiohttp.web.Application):
     await app[client_session].close()
 
 
-async def error_handler(request):
+async def error_handler(request: web.Request) -> web.Response:
     with error_context(request) as context:
+        app = request.app
         if isinstance(context.err, ValidationError):
+            await send_error_webhook(app[client_session], context.err)
             return web.Response(text=context.err.json(), status=400, content_type="application/json")
         logger.exception(context.message, exc_info=context.err)
         return web.json_response(context.data, status=context.status)
+
+
+async def send_error_webhook(session: aiohttp.ClientSession, exception: Exception) -> None:
+    if "error_webhook" not in config["Discord"]:
+        return
+    webhook = discord.Webhook.from_url(config["Discord"]["error_webhook"], session=session)
+    if isinstance(exception, ValidationError):
+        parsed_json = json.loads(exception.json())
+        pretty_json = json.dumps(parsed_json, indent=2)
+        file_bytes = BytesIO(pretty_json.encode("utf-8"))
+        file = discord.File(file_bytes, filename="error.json")
+        await webhook.send("Error", file=file)
 
 
 def main():
