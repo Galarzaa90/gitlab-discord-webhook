@@ -1,5 +1,5 @@
 import datetime
-from typing import Annotated, Any, Dict, Literal, Optional
+from typing import Annotated, Any, Dict, Generic, Literal, Optional, TypeVar
 
 from pydantic import BaseModel, BeforeValidator
 
@@ -339,9 +339,12 @@ class NoteHookPayload(BaseModel):
         return self.object_attributes
 
 
-class Change(BaseModel):
-    previous: Optional[str]
-    current: str
+ChangeT = TypeVar('ChangeT')
+
+
+class Change(BaseModel, Generic[ChangeT]):
+    previous: Optional[ChangeT]
+    current: Optional[ChangeT]
 
 
 class MergeRequestHookPayload(BaseModel):
@@ -351,8 +354,10 @@ class MergeRequestHookPayload(BaseModel):
     project: Project
     object_attributes: MergeRequestDetails
     labels: list[Label]
-    changes: Dict[str, Change]
+    changes: dict[str, Change]
     repository: Repository
+    assignees: list[User]
+    reviewers: list[User]
 
     @property
     def merge_request(self) -> MergeRequestDetails:

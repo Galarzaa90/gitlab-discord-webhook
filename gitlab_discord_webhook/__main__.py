@@ -142,20 +142,31 @@ async def process_merge_request_hook(app: aiohttp.web.Application, data: MergeRe
     project = data.project
     merge = data.merge_request
     user = data.user
-    description = ""
-    action = "Issue updated"
-    colour = discord.Colour.light_grey()
-    if merge.action == "open":
-        action = "Merge request opened"
-        description = merge.description
-        colour = discord.Colour.dark_green()
-    elif merge.action == "close":
-        action = "Merge request closed"
-        colour = discord.Colour.dark_grey()
-    embed = discord.Embed(title=f"[{project.namespace}/{project.name}] {action}: !{merge.iid} {merge.title}",
-                          url=merge.url, description=description, colour=colour)
+    action = "Merge request updated"
+    embed = discord.Embed(
+        url=merge.url,
+        timestamp=merge.created_at,
+    )
     embed.set_author(name=user.username, icon_url=user.avatar_url)
     embed.set_footer(text=f"{merge.source_branch} → {merge.target_branch}")
+    if merge.action == "open":
+        action = "Merge request opened"
+        embed.description = merge.description
+        embed.colour = discord.Colour.dark_green()
+    elif merge.action == "close":
+        action = "Merge request closed"
+        embed.colour = discord.Colour.dark_grey()
+    elif merge.action == "merge":
+        action = "Merge request merged"
+        embed.colour = discord.Colour(0x064787)
+    embed.title = f"[{project.namespace}/{project.name}] {action}: !{merge.iid} {merge.title}"
+    if merge.action == "open":
+        if data.assignees:
+            embed.add_field(name="Assignees", value="\n".join([f"- {label.username}" for label in data.assignees]))
+        if data.reviewers:
+            embed.add_field(name="Reviewers", value="\n".join([f"- {label.username}" for label in data.reviewers]))
+        if merge.labels:
+            embed.add_field(name="Labels", value="\n".join([f"- `{label.title}`" for label in merge.labels]))
     await send_message(app[client_session], None, embed=embed)
 
 
