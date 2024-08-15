@@ -25,7 +25,7 @@ client_session = web.AppKey("client_session", aiohttp.ClientSession)
 EMPTY_COMMIT = "0000000000000000000000000000000000000000"
 
 
-@routes.post("/")
+@routes.post("/events")
 async def handle_webhook(request: web.Request) -> web.Response:
     """Handle a webhook payload from GitLab.com."""
     try:
@@ -194,6 +194,9 @@ async def error_handler(request: web.Request) -> web.Response:
     """Handle errors, responding with some information on it."""
     with error_context(request) as context:
         app = request.app
+        if context.status == 405:
+
+            return web.Response(text="404: Not Found", status=404)
         if isinstance(context.err, ValidationError):
             await send_error_webhook(app[client_session], context.err)
             return web.Response(text=context.err.json(), status=400, content_type="application/json")
