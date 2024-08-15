@@ -1,4 +1,9 @@
 # GitLab Discord Webhook
+![PyPI - Version](https://img.shields.io/pypi/v/gitlab-discord-webhook)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/gitlab-discord-webhook)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/gitlab-discord-webhook)
+
+
 A middleman between GitLab and Discord webhooks to show better formatted messages.
 
 ## Use instructions
@@ -31,6 +36,30 @@ but every instance will only post messages through a single Discord webhook.
 - [ ] Job events
 - [ ] Pipeline events
 - [ ] Wiki Page events
+
+## Running from Docker
+![Docker Image Version](https://img.shields.io/docker/v/galarzaa90/gitlab-discord-webhook)
+![Docker Image Size](https://img.shields.io/docker/image-size/galarzaa90/gitlab-discord-webhook)
+![Docker Pulls](https://img.shields.io/docker/pulls/galarzaa90/gitlab-discord-webhook)
+
+
+The image can be pulled from [Docker Hub](https://hub.docker.com/r/galarzaa90/gitlab-discord-webhook):
+
+```shell
+docker pull galarzaa90/gitlab-discord-webhook:latest
+```
+
+Alternatively, the image can be built from the root of the project's source.
+
+```shell
+docker build . -t gitlab-discord-webhook:local
+```
+
+To run the image:
+
+```shell
+docker run -p 7400:7400 --rm -ti gitlab-discord-webhook:local
+```
 
 
 ## References
