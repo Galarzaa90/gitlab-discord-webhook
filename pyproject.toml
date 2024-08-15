@@ -19,7 +19,7 @@ description = "A middleman between GitLab and Discord webhooks to show better fo
 requires-python = ">=3.9"
 readme = "README.md"
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
@@ -37,6 +37,11 @@ classifiers = [
     "Topic :: System :: Logging",
     "Topic :: Utilities",
 ]
+
+[project.urls]
+"Repository" = "https://github.com/Galarzaa90/gitlab-discord-webhook"
+"GitHub: Issues" = "https://github.com/Galarzaa90/gitlab-discord-webhook/issues"
+"Docker Hub: Repo" = "https://hub.docker.com/repository/docker/galarzaa90/gitlab-discord-webhook"
 
 [project.scripts]
 gitlab-discord-webhook = "gitlab_discord_webhook.__main__:main"
