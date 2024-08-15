@@ -1,0 +1,9 @@
+services:
+  gitlab-webhook:
+    image: galarzaa90/gitlab-discord-webhook:latest
+#    build:
+#      context: .
+    volumes:
+      - ./config.ini:/app/config.ini
+    ports:
+      - 7400:7400
