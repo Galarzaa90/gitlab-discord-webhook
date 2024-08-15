@@ -1,0 +1,9 @@
+# This webhook will be used by all projects.
+webhook: https://discord.com/api/webhooks/1255389896970080306/VagdXCub1HablJLscCkJCABicKKSCyZRurv7v6mzg08SASV5WNl2P-55AimJI4Zjryg8
+errorWebhook: https://discord.com/api/webhooks/1255389896970080306/VagdXCub1HablJLscCkJCABicKKSCyZRurv7v6mzg08SASV5WNl2P-55AimJI4Zjryg8
+
+projects:
+  # This webhook will be used for all projects in group NabBot
+  nabbot/*:
+  galarzaa/gitlab-webhook.py:
+

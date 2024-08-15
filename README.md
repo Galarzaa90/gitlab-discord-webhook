@@ -1,4 +1,4 @@
-# gitlab-webhook.py
+# GitLab Discord Webhook
 A middleman between GitLab and Discord webhooks to show better formatted messages.
 
 ## Use instructions

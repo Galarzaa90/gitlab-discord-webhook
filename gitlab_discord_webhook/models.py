@@ -1,5 +1,5 @@
 import datetime
-from typing import Annotated, Any, Dict, Generic, Literal, Optional, TypeVar
+from typing import Annotated, Any, Generic, Literal, Optional, TypeVar
 
 from pydantic import BaseModel, BeforeValidator
 
@@ -13,26 +13,6 @@ def parse_gitlab_timestamp(value: str) -> datetime.datetime:
 
 
 GitLabTimestamp = Annotated[datetime.datetime, BeforeValidator(parse_gitlab_timestamp)]
-
-
-class ObjectAttributes(BaseModel):
-    id: int
-    iid: int
-    name: None
-    ref: str
-    tag: bool
-    sha: str
-    before_sha: str
-    source: str
-    status: str
-    detailed_status: str
-    stages: list[str]
-    created_at: str
-    finished_at: str
-    duration: int
-    queued_duration: int
-    variables: list[Any]
-    url: str
 
 
 class SimpleUser(BaseModel):
@@ -142,6 +122,7 @@ class EscalationPolicy(BaseModel):
     id: int
     name: str
 
+
 class Issue(BaseModel):
     id: int
     title: str
@@ -151,8 +132,8 @@ class Issue(BaseModel):
     project_id: int
     created_at: GitLabTimestamp
     updated_at: GitLabTimestamp
-    position: int
-    branch_name: Optional[None]
+    position: Optional[int] = None
+    branch_name: Optional[str] = None
     description: str
     milestone_id: Optional[int]
     state: str
@@ -339,7 +320,7 @@ class NoteHookPayload(BaseModel):
         return self.object_attributes
 
 
-ChangeT = TypeVar('ChangeT')
+ChangeT = TypeVar("ChangeT")
 
 
 class Change(BaseModel, Generic[ChangeT]):

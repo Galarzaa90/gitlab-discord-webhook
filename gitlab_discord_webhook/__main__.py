@@ -1,5 +1,6 @@
 import configparser
 import json
+from collections.abc import AsyncIterator
 from io import BytesIO
 
 import aiohttp
@@ -24,8 +25,9 @@ client_session = web.AppKey("client_session", aiohttp.ClientSession)
 EMPTY_COMMIT = "0000000000000000000000000000000000000000"
 
 
-@routes.post("/webhook/gitlab")
-async def receive_webhook(request: web.Request):
+@routes.post("/")
+async def handle_webhook(request: web.Request) -> web.Response:
+    """Handle a webhook payload from GitLab.com."""
     try:
         event_type = request.headers.getone("x-gitlab-event")
     except KeyError:
@@ -90,8 +92,8 @@ async def process_push_hook(app: aiohttp.web.Application, push: models.PushHookP
     await send_message(app[client_session], None, embed=embed)
 
 
-async def process_issue_hook(app: aiohttp.web.Application, issue_data: IssueHookPayload):
-    """Builds and sends an embed message with issues information."""
+async def process_issue_hook(app: aiohttp.web.Application, issue_data: IssueHookPayload) -> None:
+    """Build and sends an embed message with issues information."""
     project = issue_data.project
     issue = issue_data.issue
     user = issue_data.user
@@ -116,8 +118,8 @@ async def process_issue_hook(app: aiohttp.web.Application, issue_data: IssueHook
     await send_message(app[client_session], None, embed=embed)
 
 
-async def process_note_hook(app: aiohttp.web.Application, data: NoteHookPayload):
-    """Builds and sends an embed message with notes information."""
+async def process_note_hook(app: aiohttp.web.Application, data: NoteHookPayload) -> None:
+    """Build and sends an embed message with notes information."""
     note = data.note
     user = data.user
     project = data.project
@@ -137,8 +139,8 @@ async def process_note_hook(app: aiohttp.web.Application, data: NoteHookPayload)
     await send_message(app[client_session], None, embed=embed)
 
 
-async def process_merge_request_hook(app: aiohttp.web.Application, data: MergeRequestHookPayload):
-    """Builds and sends an embed message with merge request information."""
+async def process_merge_request_hook(app: aiohttp.web.Application, data: MergeRequestHookPayload) -> None:
+    """Build and sends an embed message with merge request information."""
     project = data.project
     merge = data.merge_request
     user = data.user
@@ -170,7 +172,8 @@ async def process_merge_request_hook(app: aiohttp.web.Application, data: MergeRe
     await send_message(app[client_session], None, embed=embed)
 
 
-async def send_message(session: aiohttp.ClientSession, content, **kwargs):
+async def send_message(session: aiohttp.ClientSession, content, **kwargs) -> None:
+    """Send a message through a Discord webhook."""
     try:
         webhook = discord.Webhook.from_url(config["Discord"]["webhook"], session=session)
         await webhook.send(content, **kwargs)
@@ -178,7 +181,8 @@ async def send_message(session: aiohttp.ClientSession, content, **kwargs):
         web.HTTPInternalServerError(text=str(e))
 
 
-async def prepare_session(app: aiohttp.web.Application):
+async def prepare_session(app: aiohttp.web.Application) -> AsyncIterator[None]:
+    """Prepare the HTTP client session that will be used for all requests."""
     logger.info("Creating ClientSession.")
     app[client_session] = aiohttp.ClientSession()
     yield
@@ -187,6 +191,7 @@ async def prepare_session(app: aiohttp.web.Application):
 
 
 async def error_handler(request: web.Request) -> web.Response:
+    """Handle errors, responding with some information on it."""
     with error_context(request) as context:
         app = request.app
         if isinstance(context.err, ValidationError):
@@ -197,6 +202,7 @@ async def error_handler(request: web.Request) -> web.Response:
 
 
 async def send_error_webhook(session: aiohttp.ClientSession, exception: Exception) -> None:
+    """Send a message through the configured error webhook."""
     if "error_webhook" not in config["Discord"]:
         return
     webhook = discord.Webhook.from_url(config["Discord"]["error_webhook"], session=session)
@@ -208,7 +214,8 @@ async def send_error_webhook(session: aiohttp.ClientSession, exception: Exceptio
         await webhook.send("Error", file=file)
 
 
-def main():
+def main() -> None:
+    """Start the HTTP server."""
     if not config.read("config.ini"):
         print("Could not find config file.")
         exit()
