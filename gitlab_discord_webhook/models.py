@@ -1,5 +1,5 @@
 import datetime
-from typing import Annotated, Any, Generic, Literal, Optional, TypeVar
+from typing import Annotated, Any, Generic, Literal, TypeVar
 
 from pydantic import BaseModel, BeforeValidator
 
@@ -30,18 +30,18 @@ class User(BaseModel):
 
 
 class Project(BaseModel):
-    id: Optional[int] = int
+    id: int | None = int
     name: str
-    description: Optional[str]
+    description: str | None
     web_url: str
-    avatar_url: Optional[str]
+    avatar_url: str | None
     git_ssh_url: str
     git_http_url: str
     namespace: str
     visibility_level: int
     path_with_namespace: str
     default_branch: str
-    ci_config_path: Optional[str] = None
+    ci_config_path: str | None = None
 
 
 class Author(BaseModel):
@@ -52,7 +52,7 @@ class Author(BaseModel):
 class Commit(BaseModel):
     id: str
     message: str
-    title: Optional[str] = None
+    title: str | None = None
     timestamp: datetime.datetime
     url: str
     author: Author
@@ -68,8 +68,8 @@ class Runner(BaseModel):
 
 
 class ArtifactsFile(BaseModel):
-    filename: Optional[str]
-    size: Optional[int]
+    filename: str | None
+    size: int | None
 
 
 class Build(BaseModel):
@@ -78,16 +78,16 @@ class Build(BaseModel):
     name: str
     status: str
     created_at: str
-    started_at: Optional[str]
-    finished_at: Optional[str]
-    duration: Optional[float]
-    queued_duration: Optional[float]
-    failure_reason: Optional[str]
+    started_at: str | None
+    finished_at: str | None
+    duration: float | None
+    queued_duration: float | None
+    failure_reason: str | None
     when: str
     manual: bool
     allow_failure: bool
     user: User
-    runner: Optional[Runner]
+    runner: Runner | None
     artifacts_file: ArtifactsFile
     environment: None
 
@@ -95,7 +95,7 @@ class Build(BaseModel):
 class Repository(BaseModel):
     name: str
     url: str
-    description: Optional[str]
+    description: str | None
     homepage: str
 
 
@@ -109,13 +109,13 @@ class Label(BaseModel):
     id: int
     title: str
     color: str
-    project_id: Optional[int]
+    project_id: int | None
     created_at: GitLabTimestamp
     updated_at: GitLabTimestamp
     template: bool
-    description: Optional[str]
+    description: str | None
     type: str
-    group_id: Optional[int]
+    group_id: int | None
 
 
 class EscalationPolicy(BaseModel):
@@ -127,28 +127,28 @@ class Issue(BaseModel):
     id: int
     title: str
     assignee_ids: list[int]
-    assignee_id: Optional[int]
+    assignee_id: int | None
     author_id: int
     project_id: int
     created_at: GitLabTimestamp
     updated_at: GitLabTimestamp
-    position: Optional[int] = None
-    branch_name: Optional[str] = None
+    position: int | None = None
+    branch_name: str | None = None
     description: str
-    milestone_id: Optional[int]
+    milestone_id: int | None
     state: str
     iid: int
     labels: list[Label]
 
 
 class IssueDetails(Issue):
-    updated_by_id: Optional[int]
+    updated_by_id: int | None
     last_edited_at: None
     last_edited_by_id: None
-    relative_position: Optional[int]
+    relative_position: int | None
     state_id: int
     confidential: bool
-    discussion_locked: Optional[bool]
+    discussion_locked: bool | None
     due_date: None
     moved_to_id: None
     duplicated_to_id: None
@@ -159,13 +159,13 @@ class IssueDetails(Issue):
     human_time_estimate: None
     human_time_change: None
     weight: None
-    health_status: Optional[str]
+    health_status: str | None
     type: str
     url: str
     action: str
     severity: str
-    escalation_status: Optional[str] = None
-    escalation_policy: Optional[EscalationPolicy] = None
+    escalation_status: str | None = None
+    escalation_policy: EscalationPolicy | None = None
 
 
 class MergeParams(BaseModel):
@@ -173,8 +173,8 @@ class MergeParams(BaseModel):
 
 
 class MergeRequest(BaseModel):
-    assignee: Optional[SimpleUser] = None
-    assignee_id: Optional[int]
+    assignee: SimpleUser | None = None
+    assignee_id: int | None
     author_id: int
     created_at: GitLabTimestamp
     description: str
@@ -185,8 +185,8 @@ class MergeRequest(BaseModel):
     labels: list[Label]
     last_commit: Commit
     merge_status: str
-    milestone_id: Optional[int]
-    position: Optional[int] = None
+    milestone_id: int | None
+    position: int | None = None
     source: Project
     source_branch: str
     source_project_id: int
@@ -201,28 +201,28 @@ class MergeRequest(BaseModel):
 
 class MergeRequestDetails(MergeRequest):
     action: str
-    approval_rules: Optional[list[Any]] = None
+    approval_rules: list[Any] | None = None
     assignee_ids: list[int]
     blocking_discussions_resolved: bool
     first_contribution: bool
     head_pipeline_id: Any = None
-    human_time_change: Optional[str]
-    human_time_estimate: Optional[str]
-    human_total_time_spent: Optional[str]
-    last_edited_at: Optional[GitLabTimestamp] = None
-    last_edited_by_id: Optional[int] = None
-    merge_commit_sha: Optional[str] = None
-    merge_error: Optional[Any] = None
-    merge_params: Optional[MergeParams] = None
-    merge_user_id: Optional[int] = None
-    merge_when_pipeline_succeeds: Optional[bool] = None
+    human_time_change: str | None
+    human_time_estimate: str | None
+    human_total_time_spent: str | None
+    last_edited_at: GitLabTimestamp | None = None
+    last_edited_by_id: int | None = None
+    merge_commit_sha: str | None = None
+    merge_error: Any | None = None
+    merge_params: MergeParams | None = None
+    merge_user_id: int | None = None
+    merge_when_pipeline_succeeds: bool | None = None
     prepared_at: str
     reviewer_ids: list[Any]
     state_id: int
-    time_change: Optional[int] = None
-    time_estimate: Optional[int] = None
-    total_time_spent: Optional[int] = None
-    updated_by_id: Optional[int] = None
+    time_change: int | None = None
+    time_estimate: int | None = None
+    total_time_spent: int | None = None
+    updated_by_id: int | None = None
     url: str
 
 
@@ -241,13 +241,13 @@ class Note(BaseModel):
     attachment: None = None
     author_id: int
     change_position: None = None
-    commit_id: Optional[str]
+    commit_id: str | None
     created_at: GitLabTimestamp
-    discussion_id: Optional[str] = None
+    discussion_id: str | None = None
     id: int
-    line_code: Optional[str] = None
+    line_code: str | None = None
     note: str
-    noteable_id: Optional[int]
+    noteable_id: int | None
     noteable_type: str
     original_position: None = None
     position: None = None
@@ -255,12 +255,12 @@ class Note(BaseModel):
     resolved_at: None = None
     resolved_by_id: None = None
     resolved_by_push: None = None
-    st_diff: Optional[StDiff] = None
+    st_diff: StDiff | None = None
     system: bool
-    type: Optional[str] = None
+    type: str | None = None
     updated_at: GitLabTimestamp
     updated_by_id: None = None
-    description: Optional[str] = None
+    description: str | None = None
     url: str
     action: str
 
@@ -272,8 +272,8 @@ class PushHookPayload(BaseModel):
     after: str
     ref: str
     ref_protected: bool
-    checkout_sha: Optional[str]
-    message: Optional[str] = None
+    checkout_sha: str | None
+    message: str | None = None
     user_id: int
     user_name: str
     user_username: str
@@ -283,7 +283,7 @@ class PushHookPayload(BaseModel):
     project: Project
     commits: list[Commit]
     total_commits_count: int
-    push_options: Optional[Any] = None
+    push_options: Any | None = None
     repository: RepositoryDetails
 
     @property
@@ -311,9 +311,9 @@ class NoteHookPayload(BaseModel):
     project: Project
     object_attributes: Note
     repository: Repository
-    issue: Optional[Issue] = None
-    commit: Optional[Commit] = None
-    merge_request: Optional[MergeRequest] = None
+    issue: Issue | None = None
+    commit: Commit | None = None
+    merge_request: MergeRequest | None = None
 
     @property
     def note(self) -> Note:
@@ -324,8 +324,8 @@ ChangeT = TypeVar("ChangeT")
 
 
 class Change(BaseModel, Generic[ChangeT]):
-    previous: Optional[ChangeT]
-    current: Optional[ChangeT]
+    previous: ChangeT | None
+    current: ChangeT | None
 
 
 class MergeRequestHookPayload(BaseModel):

@@ -16,7 +16,7 @@ dynamic = ["dependencies"]
 optional-dependencies = { "lint" = ["ruff"] }
 license = { text = "MIT" }
 description = "A middleman between GitLab and Discord webhooks to show better formatted messages."
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.md"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -50,7 +50,6 @@ gitlab-discord-webhook = "gitlab_discord_webhook.__main__:main"
 dependencies = { file = ["requirements.txt"] }
 
 [too.ruff]
-target-version = "py39"
 [tool.ruff.lint]
 select = [
     "E", "W293", # pycodestyle

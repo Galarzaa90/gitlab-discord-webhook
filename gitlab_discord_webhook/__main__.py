@@ -37,11 +37,11 @@ async def handle_webhook(request: web.Request) -> web.Response:
     body = await request.json()
     if event_type == "Push Hook":
         await process_push_hook(request.app, PushHookPayload.model_validate(body))
-    if event_type == "Issue Hook":
+    elif event_type == "Issue Hook":
         await process_issue_hook(request.app, IssueHookPayload.model_validate(body))
-    if event_type == "Note Hook":
+    elif event_type == "Note Hook":
         await process_note_hook(request.app, NoteHookPayload.model_validate(body))
-    if event_type == "Merge Request Hook":
+    elif event_type == "Merge Request Hook":
         await process_merge_request_hook(request.app, MergeRequestHookPayload.model_validate(body))
     return web.Response(text="OK")
 
