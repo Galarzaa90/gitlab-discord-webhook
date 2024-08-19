@@ -1,6 +1,8 @@
 services:
   gitlab-webhook:
+    # Build from DockerHub's image.
     image: galarzaa90/gitlab-discord-webhook:latest
+    # Comment image, and uncomment build to build locally.
 #    build:
 #      context: .
     volumes:

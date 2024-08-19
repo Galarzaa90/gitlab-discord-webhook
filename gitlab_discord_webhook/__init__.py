@@ -5,7 +5,7 @@ __copyright__ = "Copyright 2024, Allan Galarza"
 __credits__ = ["Allan Galarza"]
 
 __license__ = "MIT"
-__version__ = "v0.1.0"
+__version__ = "0.2.0"
 __maintainer__ = "Allan Galarza"
 __email__ = "allan.galarza@gmail.com"
 __status__ = "Beta"
