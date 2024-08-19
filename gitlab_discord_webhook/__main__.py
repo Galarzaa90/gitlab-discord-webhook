@@ -14,7 +14,8 @@ from loguru import logger
 from pydantic import ValidationError
 
 from gitlab_discord_webhook import models
-from gitlab_discord_webhook.models import IssueHookPayload, MergeRequestHookPayload, NoteHookPayload, PushHookPayload
+from gitlab_discord_webhook.models import IssueHookPayload, JobHookPayload, MergeRequestHookPayload, NoteHookPayload, \
+    PushHookPayload
 
 config = configparser.ConfigParser()
 
@@ -34,15 +35,20 @@ async def handle_webhook(request: web.Request) -> web.Response:
         logger.error("Request is missing `x-gitlab-event` header.")
         return web.HTTPBadRequest(text="GitLab event type not found.")
     logger.info("Received `{}` event", event_type)
+
+    event_types = {
+        "Push Hook": lambda b: process_push_hook(request.app, PushHookPayload.model_validate(b)),
+        "Issue Hook": lambda b: process_issue_hook(request.app, IssueHookPayload.model_validate(b)),
+        "Note Hook": lambda b: process_note_hook(request.app, NoteHookPayload.model_validate(b)),
+        "Merge Request Hook": lambda b: process_merge_request_hook(request.app,
+                                                                   MergeRequestHookPayload.model_validate(b)),
+        "Job Hook": lambda b: process_job_hook(request.app, JobHookPayload.model_validate(b)),
+    }
+
     body = await request.json()
-    if event_type == "Push Hook":
-        await process_push_hook(request.app, PushHookPayload.model_validate(body))
-    elif event_type == "Issue Hook":
-        await process_issue_hook(request.app, IssueHookPayload.model_validate(body))
-    elif event_type == "Note Hook":
-        await process_note_hook(request.app, NoteHookPayload.model_validate(body))
-    elif event_type == "Merge Request Hook":
-        await process_merge_request_hook(request.app, MergeRequestHookPayload.model_validate(body))
+    if event_type not in event_types:
+        return web.Response(text="Event type is not supported yet.", status=202)
+    await event_types[event_type](body)
     return web.Response(text="OK")
 
 
@@ -59,7 +65,7 @@ async def process_push_hook(app: aiohttp.web.Application, push: models.PushHookP
 
     if push.before == EMPTY_COMMIT:
         embed = discord.Embed(
-            title=f"{project.namespace}/{project.name}] New branch created `{push.branch}`",
+            title=f"[{project.namespace}/{project.name}] New branch created `{push.branch}`",
             url=embed_url,
             colour=discord.Colour.light_grey(),
         )
@@ -136,6 +142,12 @@ async def process_note_hook(app: aiohttp.web.Application, data: NoteHookPayload)
     elif data.merge_request:
         merge = data.merge_request
         embed.title = f"[{project.namespace}/{project.name}] New comment on merge request !{merge.iid}: {merge.title}"
+
+    if position := data.note.position:
+        embed.add_field(
+            name="Position",
+            value=f"Line {position.new_line} on `{position.new_path}`.",
+        )
     await send_message(app[client_session], None, embed=embed)
 
 
@@ -161,6 +173,9 @@ async def process_merge_request_hook(app: aiohttp.web.Application, data: MergeRe
     elif merge.action == "merge":
         action = "Merge request merged"
         embed.colour = discord.Colour(0x064787)
+    elif merge.action == "approved":
+        action = "Merge request approved"
+        embed.colour = discord.Colour(0x009e0e)
     embed.title = f"[{project.namespace}/{project.name}] {action}: !{merge.iid} {merge.title}"
     if merge.action == "open":
         if data.assignees:
@@ -169,6 +184,15 @@ async def process_merge_request_hook(app: aiohttp.web.Application, data: MergeRe
             embed.add_field(name="Reviewers", value="\n".join([f"- {label.username}" for label in data.reviewers]))
         if merge.labels:
             embed.add_field(name="Labels", value="\n".join([f"- `{label.title}`" for label in merge.labels]))
+    await send_message(app[client_session], None, embed=embed)
+
+
+async def process_job_hook(app: aiohttp.web.Application, job: JobHookPayload) -> None:
+    """Build and send and embed with job information."""
+    embed = discord.Embed(
+        url=job.job_url,
+        timestamp=job.build_created_at,
+    )
     await send_message(app[client_session], None, embed=embed)
 
 
@@ -195,7 +219,6 @@ async def error_handler(request: web.Request) -> web.Response:
     with error_context(request) as context:
         app = request.app
         if context.status == 405:
-
             return web.Response(text="404: Not Found", status=404)
         if isinstance(context.err, ValidationError):
             await send_error_webhook(app[client_session], context.err)

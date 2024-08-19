@@ -30,7 +30,7 @@ class User(BaseModel):
 
 
 class Project(BaseModel):
-    id: int | None = int
+    id: int | None
     name: str
     description: str | None
     web_url: str
@@ -237,10 +237,34 @@ class StDiff(BaseModel):
     deleted_file: bool
 
 
+class LineRangePart(BaseModel):
+    line_code: str
+    type: str
+    old_line: int | None
+    new_line: int | None
+
+
+class LineRange(BaseModel):
+    start: LineRangePart
+    end: LineRangePart
+
+
+class Position(BaseModel):
+    base_sha: str | None
+    start_sha: str | None
+    head_sha: str | None
+    old_path: str | None
+    new_path: str | None
+    position_type: str | None
+    old_line: int | None
+    new_line: int | None
+    line_range: LineRange | None
+
+
 class Note(BaseModel):
     attachment: None = None
     author_id: int
-    change_position: None = None
+    change_position: Position | None = None
     commit_id: str | None
     created_at: GitLabTimestamp
     discussion_id: str | None = None
@@ -249,8 +273,8 @@ class Note(BaseModel):
     note: str
     noteable_id: int | None
     noteable_type: str
-    original_position: None = None
-    position: None = None
+    original_position: Position | None = None
+    position: Position | None = None
     project_id: int
     resolved_at: None = None
     resolved_by_id: None = None
@@ -343,3 +367,34 @@ class MergeRequestHookPayload(BaseModel):
     @property
     def merge_request(self) -> MergeRequestDetails:
         return self.object_attributes
+
+
+class JobCommit(BaseModel):
+    id: int
+    sha: str
+    message: str
+    author_url: str
+    author_name: str
+    status: str
+
+
+class JobHookPayload(BaseModel):
+    object_kind: Literal["build"]
+    user: User
+    commit: JobCommit
+    repository: Repository
+    project: Project
+    environment: str | None
+
+    build_id: int
+    build_name: str
+    build_stage: str
+    build_status: str
+    build_created_at: GitLabTimestamp
+    build_started_at: GitLabTimestamp | None
+    build_finished_at: GitLabTimestamp | None
+    pipeline_id: int
+
+    @property
+    def job_url(self) -> str:
+        return f"{self.project.web_url}/~/jobs/{self.build_id}"
