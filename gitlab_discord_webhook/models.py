@@ -16,12 +16,16 @@ GitLabTimestamp = Annotated[datetime.datetime, BeforeValidator(parse_gitlab_time
 
 
 class SimpleUser(BaseModel):
+    """Simple user information."""
+
     name: str
     username: str
     avatar_url: str
 
 
 class User(BaseModel):
+    """User information."""
+
     id: int
     name: str
     username: str
@@ -30,6 +34,8 @@ class User(BaseModel):
 
 
 class Project(BaseModel):
+    """A GitLab project (repository)."""
+
     id: int | None
     name: str
     description: str | None
@@ -45,11 +51,15 @@ class Project(BaseModel):
 
 
 class Author(BaseModel):
+    """A commit author."""
+
     name: str
     email: str
 
 
 class Commit(BaseModel):
+    """Information about a commit."""
+
     id: str
     message: str
     title: str | None = None
@@ -59,6 +69,8 @@ class Commit(BaseModel):
 
 
 class Runner(BaseModel):
+    """Information about the runner that executed a build."""
+
     id: int
     description: str
     runner_type: str
@@ -68,11 +80,15 @@ class Runner(BaseModel):
 
 
 class ArtifactsFile(BaseModel):
+    """A file containing an artifact."""
+
     filename: str | None
     size: int | None
 
 
 class Build(BaseModel):
+    """Information about a build."""
+
     id: int
     stage: str
     name: str
@@ -89,10 +105,12 @@ class Build(BaseModel):
     user: User
     runner: Runner | None
     artifacts_file: ArtifactsFile
-    environment: None
+    environment: str | None
 
 
 class Repository(BaseModel):
+    """A git repository."""
+
     name: str
     url: str
     description: str | None
@@ -100,12 +118,16 @@ class Repository(BaseModel):
 
 
 class RepositoryDetails(Repository):
+    """A repository with additional details."""
+
     git_http_url: str
     git_ssh_url: str
     visibility_level: int
 
 
 class Label(BaseModel):
+    """A label in a issue or merge request."""
+
     id: int
     title: str
     color: str
@@ -238,6 +260,8 @@ class StDiff(BaseModel):
 
 
 class LineRangePart(BaseModel):
+    """Details about the start or end of a line range."""
+
     line_code: str
     type: str
     old_line: int | None
@@ -245,11 +269,15 @@ class LineRangePart(BaseModel):
 
 
 class LineRange(BaseModel):
+    """Describes a range between two lines."""
+
     start: LineRangePart
     end: LineRangePart
 
 
 class Position(BaseModel):
+    """Information about the position of a comment."""
+
     base_sha: str | None
     start_sha: str | None
     head_sha: str | None
@@ -262,6 +290,8 @@ class Position(BaseModel):
 
 
 class Note(BaseModel):
+    """A note (or comment) in GitLab."""
+
     attachment: None = None
     author_id: int
     change_position: Position | None = None
@@ -290,6 +320,8 @@ class Note(BaseModel):
 
 
 class PushHookPayload(BaseModel):
+    """Payload schema for push events."""
+
     object_kind: Literal["push"]
     event_name: Literal["push"]
     before: str
@@ -312,10 +344,13 @@ class PushHookPayload(BaseModel):
 
     @property
     def branch(self) -> str:
+        """The name of the branch."""
         return self.ref.replace("refs/heads/", "")
 
 
 class IssueHookPayload(BaseModel):
+    """Payload schema for a issue event."""
+
     object_kind: Literal["issue"]
     event_type: Literal["issue"]
     user: User
@@ -324,10 +359,13 @@ class IssueHookPayload(BaseModel):
 
     @property
     def issue(self) -> IssueDetails:
+        """Alias to access the issue's information."""
         return self.object_attributes
 
 
 class NoteHookPayload(BaseModel):
+    """Payload schema for note events."""
+
     object_kind: Literal["note"]
     event_type: Literal["note"]
     user: User
@@ -341,6 +379,7 @@ class NoteHookPayload(BaseModel):
 
     @property
     def note(self) -> Note:
+        """Alias to access the issue's information."""
         return self.object_attributes
 
 
@@ -348,11 +387,15 @@ ChangeT = TypeVar("ChangeT")
 
 
 class Change(BaseModel, Generic[ChangeT]):
+    """Represents a change done to an attribute."""
+
     previous: ChangeT | None
     current: ChangeT | None
 
 
 class MergeRequestHookPayload(BaseModel):
+    """Payload schema for a merge request."""
+
     object_kind: Literal["merge_request"]
     event_type: Literal["merge_request"]
     user: User
@@ -366,10 +409,13 @@ class MergeRequestHookPayload(BaseModel):
 
     @property
     def merge_request(self) -> MergeRequestDetails:
+        """Alias to a merge request information."""
         return self.object_attributes
 
 
 class JobCommit(BaseModel):
+    """Commit information."""
+
     id: int
     sha: str
     message: str
@@ -379,6 +425,8 @@ class JobCommit(BaseModel):
 
 
 class JobHookPayload(BaseModel):
+    """Payload schema for a job event."""
+
     object_kind: Literal["build"]
     user: User
     commit: JobCommit
@@ -397,4 +445,5 @@ class JobHookPayload(BaseModel):
 
     @property
     def job_url(self) -> str:
+        """URL to the job's detail page."""
         return f"{self.project.web_url}/~/jobs/{self.build_id}"

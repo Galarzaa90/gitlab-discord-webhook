@@ -11,8 +11,7 @@ authors = [
 maintainers = [
     { name = "Allan Galarza", email = "allan.galarza@gmail.com" }
 ]
-version = "v0.1.0"
-dynamic = ["dependencies"]
+dynamic = ["version", "dependencies"]
 optional-dependencies = { "lint" = ["ruff"] }
 license = { text = "MIT" }
 description = "A middleman between GitLab and Discord webhooks to show better formatted messages."
@@ -47,6 +46,7 @@ classifiers = [
 gitlab-discord-webhook = "gitlab_discord_webhook.__main__:main"
 
 [tool.setuptools.dynamic]
+version = { attr = "gitlab_discord_webhook.__version__" }
 dependencies = { file = ["requirements.txt"] }
 
 [too.ruff]
@@ -81,6 +81,7 @@ ignore = [
     "D213", # 1 blank line required before class docstring
     "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
     "RUF013", # PEP 484 prohibits implicit `Optional`
+    "ANN003", # Missing type annotation for **{name}
     "ANN101", # Missing type annotation for {name} in method
     "ANN102", # Missing type annotation for {name} in classmethod
     "ANN202", # Missing return type annotation for private function {name}
@@ -94,3 +95,6 @@ max-line-length = 120
 [tool.ruff.lint.pyupgrade]
 # Preserve types, even if a file imports `from __future__ import annotations`.
 keep-runtime-typing = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*" = ["D", "ANN"]

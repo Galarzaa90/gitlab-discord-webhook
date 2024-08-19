@@ -40,8 +40,10 @@ async def handle_webhook(request: web.Request) -> web.Response:
         "Push Hook": lambda b: process_push_hook(request.app, PushHookPayload.model_validate(b)),
         "Issue Hook": lambda b: process_issue_hook(request.app, IssueHookPayload.model_validate(b)),
         "Note Hook": lambda b: process_note_hook(request.app, NoteHookPayload.model_validate(b)),
-        "Merge Request Hook": lambda b: process_merge_request_hook(request.app,
-                                                                   MergeRequestHookPayload.model_validate(b)),
+        "Merge Request Hook": lambda b: process_merge_request_hook(
+            request.app,
+            MergeRequestHookPayload.model_validate(b),
+        ),
         "Job Hook": lambda b: process_job_hook(request.app, JobHookPayload.model_validate(b)),
     }
 
@@ -196,7 +198,7 @@ async def process_job_hook(app: aiohttp.web.Application, job: JobHookPayload) ->
     await send_message(app[client_session], None, embed=embed)
 
 
-async def send_message(session: aiohttp.ClientSession, content, **kwargs) -> None:
+async def send_message(session: aiohttp.ClientSession, content: str, **kwargs) -> None:
     """Send a message through a Discord webhook."""
     try:
         webhook = discord.Webhook.from_url(config["Discord"]["webhook"], session=session)
