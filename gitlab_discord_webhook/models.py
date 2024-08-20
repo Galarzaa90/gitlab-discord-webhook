@@ -1,7 +1,7 @@
 import datetime
 from typing import Annotated, Any, Generic, Literal, TypeVar
 
-from pydantic import BaseModel, BeforeValidator
+from pydantic import BaseModel, BeforeValidator, ConfigDict
 
 
 def parse_gitlab_timestamp(value: str) -> datetime.datetime:
@@ -393,6 +393,13 @@ class Change(BaseModel, Generic[ChangeT]):
     current: ChangeT | None
 
 
+class ChangeSet(BaseModel):
+    updated_at: Change[GitLabTimestamp | None] | None = None
+    labels: Change[list[Label]] | None = None
+
+    model_config = ConfigDict(extra="allow")
+
+
 class MergeRequestHookPayload(BaseModel):
     """Payload schema for a merge request."""
 
@@ -402,7 +409,7 @@ class MergeRequestHookPayload(BaseModel):
     project: Project
     object_attributes: MergeRequestDetails
     labels: list[Label]
-    changes: dict[str, Change]
+    changes: ChangeSet
     repository: Repository
     assignees: list[User]
     reviewers: list[User]

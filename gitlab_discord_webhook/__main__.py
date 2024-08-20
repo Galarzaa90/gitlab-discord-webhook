@@ -14,7 +14,8 @@ from loguru import logger
 from pydantic import ValidationError
 
 from gitlab_discord_webhook import models
-from gitlab_discord_webhook.models import IssueHookPayload, JobHookPayload, MergeRequestHookPayload, NoteHookPayload, \
+from gitlab_discord_webhook.models import Change, IssueHookPayload, JobHookPayload, Label, MergeRequestHookPayload, \
+    NoteHookPayload, \
     PushHookPayload
 
 config = configparser.ConfigParser()
@@ -162,6 +163,7 @@ async def process_merge_request_hook(app: aiohttp.web.Application, data: MergeRe
     embed = discord.Embed(
         url=merge.url,
         timestamp=merge.created_at,
+        colour=discord.Colour(0x50BABE)
     )
     embed.set_author(name=user.username, icon_url=user.avatar_url)
     embed.set_footer(text=f"{merge.source_branch} → {merge.target_branch}")
@@ -186,7 +188,23 @@ async def process_merge_request_hook(app: aiohttp.web.Application, data: MergeRe
             embed.add_field(name="Reviewers", value="\n".join([f"- {label.username}" for label in data.reviewers]))
         if merge.labels:
             embed.add_field(name="Labels", value="\n".join([f"- `{label.title}`" for label in merge.labels]))
+    elif merge.action == "update" and data.changes:
+        if data.changes.labels:
+            process_label_changes(embed, data.changes.labels)
     await send_message(app[client_session], None, embed=embed)
+
+def process_label_changes(embed: discord.Embed, changes: Change[list[Label]]):
+    previous_ids = {l.id: l.title for l in changes.previous}
+    current_ids = {l.id: l.title for l in changes.current}
+
+    new_labels = [f"`{l}`" for lid, l in current_ids.items() if lid not in previous_ids]
+    removed_labels = [f"`{l}`" for lid, l in previous_ids.items() if lid not in current_ids]
+    content = ""
+    if new_labels:
+        content = f"Added: {','.join(new_labels)}\n"
+    if removed_labels:
+        content = f"Removed: {','.join(removed_labels)}\n"
+    embed.add_field(name="Labels", value=content)
 
 
 async def process_job_hook(app: aiohttp.web.Application, job: JobHookPayload) -> None:
