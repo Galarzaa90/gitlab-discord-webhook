@@ -414,7 +414,7 @@ class MergeRequestHookPayload(BaseModel):
     changes: ChangeSet
     repository: Repository
     assignees: list[User]
-    reviewers: list[User]
+    reviewers: list[User] = []
 
     @property
     def merge_request(self) -> MergeRequestDetails:
