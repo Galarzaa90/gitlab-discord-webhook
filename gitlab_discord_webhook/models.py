@@ -396,6 +396,8 @@ class Change(BaseModel, Generic[ChangeT]):
 class ChangeSet(BaseModel):
     updated_at: Change[GitLabTimestamp | None] | None = None
     labels: Change[list[Label]] | None = None
+    draft: Change[bool] | None = None
+    title: Change[str] | None = None
 
     model_config = ConfigDict(extra="allow")
 

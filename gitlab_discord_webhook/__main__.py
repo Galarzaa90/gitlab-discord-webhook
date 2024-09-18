@@ -189,9 +189,13 @@ async def process_merge_request_hook(app: aiohttp.web.Application, data: MergeRe
         if merge.labels:
             embed.add_field(name="Labels", value="\n".join([f"- `{label.title}`" for label in merge.labels]))
     elif merge.action == "update" and data.changes:
+        embed.description = ""
+        if data.changes.draft:
+            process_draft_change(embed, data.changes.draft)
         if data.changes.labels:
             process_label_changes(embed, data.changes.labels)
     await send_message(app[client_session], None, embed=embed)
+
 
 def process_label_changes(embed: discord.Embed, changes: Change[list[Label]]):
     previous_ids = {l.id: l.title for l in changes.previous}
@@ -205,6 +209,16 @@ def process_label_changes(embed: discord.Embed, changes: Change[list[Label]]):
     if removed_labels:
         content = f"Removed: {','.join(removed_labels)}\n"
     embed.add_field(name="Labels", value=content)
+
+
+def process_draft_change(embed: discord.Embed, draft_change: Change[bool]):
+    if draft_change.previous and not draft_change.current:
+        content = "Merge request is now ready for review."
+    elif not draft_change.previous and draft_change.current:
+        content = "Merge request is now a draft."
+    else:
+        return
+    embed.description += f"\n{content}"
 
 
 async def process_job_hook(app: aiohttp.web.Application, job: JobHookPayload) -> None:
